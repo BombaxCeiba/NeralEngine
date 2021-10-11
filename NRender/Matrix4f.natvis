@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?> 
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+    <Type Name ="::Matrix4f&lt;*&gt;">
+        <Expand>
+            <Direction>Forward</Direction>
+            <Rank>$T2</Rank>
+            <Size>16</Size>
+            <ValuePointer>(float*)row_[0]</ValuePointer>
+        </Expand>
+    </Type>
+</AutoVisualizer>
