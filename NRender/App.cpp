@@ -64,10 +64,16 @@ bool App::AddAsMainWindow(UniqueWindowPointer up_window)
     return true;
 }
 
-auto App::GetWindow(const std::wstring& window_name)->WindowHashMap::iterator
+auto App::GetWindow(const std::wstring& window_name)->Window&
 {
-    return windows_.find(window_name);
+    return *(windows_.find(window_name)->second.get());
 }
+
+auto App::GetWindow(const std::wstring& window_name)const->const Window&
+{
+    return *(windows_.find(window_name)->second.get());
+}
+
 
 int32_t App::Run()
 {

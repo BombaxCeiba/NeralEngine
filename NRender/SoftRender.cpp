@@ -1,34 +1,36 @@
 #include"SoftRender.h"
-Vector3fAlignasDefault SoftRender::DefaultShader(const ObjContentType::Vertex& vertex, const MtlContent& mtl, const Vector4fAlignas16& camera_position)
+Vector3fAlignasDefault SoftRender::DefaultShader(const ObjContentType::Vertex& vertex, const MtlContent& mtl, const Vector4fAlignas16& camera_position, const Vector3fAlignas16& view_position)
 {
+    //TODO:传入原始坐标数据进行着色
+    //Vector3fAlignasDefault result_color = Vector3fAlignasDefault{ 1.0f,1.0f,1.0f };
     static std::array<Light, 2> light_list{ 
-        Light{{20, 20, 20}, {500, 500, 500}},
-        Light{{20, 20, 20}, {500, 500, 500}}
+        Light{{10, 10, 10}, {0, 122, 204}},
+        Light{{-10, -10, -10}, {202, 81, 0}}
          };
     
-    constexpr float p = 150;   
+    constexpr float p = 150;
     Vector3fAlignasDefault result_color{};
     for (auto& light : light_list)
     {
         // 光的方向
-        Vector4fAlignas16 light_dir = light.position_ - vertex.position;
+        Vector3fAlignas16 light_dir = light.position_ - view_position;
         // 衰减因子
         float r = light_dir.Dot(light_dir);
-        //auto n = vertex.normal.;
-        Vector4fAlignas16 l_divide_r_squre = light.intensity_ / r;
+        auto n = vertex.normal;
+        Vector3fAlignas16 l_divide_r_squre = light.intensity_ / r;
 
         // ambient
-        Vector4fAlignas16 La = Vector4fAlignas16(mtl.Ka,HomogeneousType::Vector) * light.intensity_;
+        Vector3fAlignas16 La = mtl.Ka * light.intensity_;
         // diffuse
-        Vector4fAlignas16 Ld = Vector4fAlignas16(mtl.Kd,HomogeneousType::Vector) * l_divide_r_squre;
-        Ld *= std::max(0.0f, vertex.normal.Dot(Vector3fAlignas16::ToVector3(light_dir.Normalize())));
+        Vector3fAlignas16 Ld = mtl.Kd * l_divide_r_squre;
+        Ld *= std::max(0.0f, n.Dot(light_dir.Normalize()));
         // specular
         // 视线方向
-        Vector4fAlignas16 view_dir = camera_position - vertex.position;
-        Vector4fAlignas16 h = (light_dir + view_dir).Normalize();
-        Vector4fAlignas16 Ls = Vector4fAlignas16(mtl.Ks, HomogeneousType::Vector) * l_divide_r_squre;
-        Ls *= std::pow(std::max(0.0f, vertex.normal.Dot(Vector3fAlignas16::ToVector3(h))), p);
-        result_color += Vector3fAlignasDefault::ToVector3(La + Ld + Ls);
+        Vector3fAlignas16 view_dir = Vector3fAlignas16::ToVector3(camera_position) - view_position;
+        Vector3fAlignas16 h = (light_dir + view_dir).Normalize();
+        Vector3fAlignas16 Ls = mtl.Ks * l_divide_r_squre;
+        Ls *= std::pow(std::max(0.0f, n.Dot(h)), p);
+        result_color += La + Ld + Ls;
     }
     return result_color;
 }
@@ -37,9 +39,11 @@ Vector4fAlignas16 SoftRender::GetBarycentricArgs(const Vector4fAlignas16& target
 {
     //TODO:应当用shuffle代替set
     //set的值载入后方向为从右往左，load的值按原先的情况排列
+    float x = target_position.x();
+    float y = target_position.y();
     Vector4fAlignas16 result{};
-    result.SetX((target_position.x() * (triangle_positions[1].y() - triangle_positions[2].y()) + (triangle_positions[2].x() - triangle_positions[1].x()) * target_position.y() + triangle_positions[1].x() * triangle_positions[2].y() - triangle_positions[2].x() * triangle_positions[1].y()) / (triangle_positions[0].x() * (triangle_positions[1].y() - triangle_positions[2].y()) + (triangle_positions[2].x() - triangle_positions[1].x()) * triangle_positions[0].y() + triangle_positions[1].x() * triangle_positions[2].y() - triangle_positions[2].x() * triangle_positions[1].y()));
-    result.SetY((target_position.x() * (triangle_positions[2].y() - triangle_positions[0].y()) + (triangle_positions[0].x() - triangle_positions[2].x()) * target_position.y() + triangle_positions[2].x() * triangle_positions[0].y() - triangle_positions[0].x() * triangle_positions[2].y()) / (triangle_positions[1].x() * (triangle_positions[2].y() - triangle_positions[0].y()) + (triangle_positions[0].x() - triangle_positions[2].x()) * triangle_positions[1].y() + triangle_positions[2].x() * triangle_positions[0].y() - triangle_positions[0].x() * triangle_positions[2].y()));
+    result.SetX((x * (triangle_positions[1].y() - triangle_positions[2].y()) + (triangle_positions[2].x() - triangle_positions[1].x()) * y + triangle_positions[1].x() * triangle_positions[2].y() - triangle_positions[2].x() * triangle_positions[1].y()) / (triangle_positions[0].x() * (triangle_positions[1].y() - triangle_positions[2].y()) + (triangle_positions[2].x() - triangle_positions[1].x()) * triangle_positions[0].y() + triangle_positions[1].x() * triangle_positions[2].y() - triangle_positions[2].x() * triangle_positions[1].y()));
+    result.SetY((x * (triangle_positions[2].y() - triangle_positions[0].y()) + (triangle_positions[0].x() - triangle_positions[2].x()) * y + triangle_positions[2].x() * triangle_positions[0].y() - triangle_positions[0].x() * triangle_positions[2].y()) / (triangle_positions[1].x() * (triangle_positions[2].y() - triangle_positions[0].y()) + (triangle_positions[0].x() - triangle_positions[2].x()) * triangle_positions[1].y() + triangle_positions[2].x() * triangle_positions[0].y() - triangle_positions[0].x() * triangle_positions[2].y()));
     //result.SetZ((target_position.x() * (triangle_positions[0].y() - triangle_positions[1].y()) + (triangle_positions[1].x() - triangle_positions[0].x()) * target_position.y() + triangle_positions[0].x() * triangle_positions[1].y() - triangle_positions[1].x() * triangle_positions[0].y()) / (triangle_positions[2].x() * (triangle_positions[0].y() - triangle_positions[1].y()) + (triangle_positions[1].x() - triangle_positions[0].x()) * triangle_positions[2].y() + triangle_positions[0].x() * triangle_positions[1].y() - triangle_positions[1].x() * triangle_positions[0].y()));
     result.SetZ(1.0f - result.x() - result.y());
     return result;
@@ -67,7 +71,7 @@ Vector4fAlignas16 SoftRender::GetBarycentricArgs(const Vector4fAlignas16& target
     return result;*/
 }
 
-Vector4fAlignas16 SoftRender::Interpolate2D(const Vector4fAlignas16& barycentric_args, const float weight, const Vector4fAlignas16 properties[])
+Vector4fAlignas16 SoftRender::Interpolate2D(const Vector4fAlignas16& barycentric_args, const float weight, const std::array<Vector4fAlignas16, 3>& properties)
 {
     __m128 m128_args = _mm_load_ps(barycentric_args.GetHead());
     __m128 m128_result = _mm_add_ps(
@@ -82,7 +86,7 @@ Vector4fAlignas16 SoftRender::Interpolate2D(const Vector4fAlignas16& barycentric
     return result;
 }
 
-Vector2fAlignas16 SoftRender::Interpolate2D(const Vector4fAlignas16& barycentric_args, const float weight, const Vector2fAlignas16 properties[])
+Vector2fAlignas16 SoftRender::Interpolate2D(const Vector4fAlignas16& barycentric_args, const float weight, const std::array<Vector2fAlignas16, 3>& properties)
 {
     __m128 m128_args = _mm_load_ps(barycentric_args.GetHead());
     __m128 m128_result = _mm_load_ps(properties[0].GetHead());
@@ -101,7 +105,7 @@ Vector2fAlignas16 SoftRender::Interpolate2D(const Vector4fAlignas16& barycentric
     return Vector2fAlignas16::ToVector2(result);
 }
 
-Vector4fAlignas16 SoftRender::Interpolate3D(const Vector4fAlignas16& barycentric_args, const float weight, const Vector4fAlignas16 properties[])
+Vector4fAlignas16 SoftRender::Interpolate3D(const Vector4fAlignas16& barycentric_args, const float weight, const std::array<Vector4fAlignas16, 3>& properties)
 {
     __m128 m128_args = _mm_load_ps(barycentric_args.GetHead());
     __m128 m128_result = _mm_add_ps(
@@ -116,7 +120,7 @@ Vector4fAlignas16 SoftRender::Interpolate3D(const Vector4fAlignas16& barycentric
     return result;
 }
 
-Vector3fAlignas16 SoftRender::Interpolate3D(const Vector4fAlignas16& barycentric_args, const float weight, const Vector3fAlignas16 properties[])
+Vector3fAlignas16 SoftRender::Interpolate3D(const Vector4fAlignas16& barycentric_args, const float weight, const std::array<Vector3fAlignas16, 3>& properties)
 {
     Vector3fAlignas16 result =
         properties[0] * barycentric_args.x()
@@ -125,9 +129,23 @@ Vector3fAlignas16 SoftRender::Interpolate3D(const Vector4fAlignas16& barycentric
     return result;
 }
 
-bool SoftRender::IsPointsInTriangle2D(const float z_in_barycentric_2D_args)
+bool SoftRender::IsPointInTriangle(const Vector4fAlignas16& barycentric_args)
 {
-    return z_in_barycentric_2D_args >= 0.0f && z_in_barycentric_2D_args <= 1.0f;
+    //Vector4fAlignas16 v0, v1, v2;
+    //v0 = triangle_positions[1].Cross3(triangle_positions[0]);
+    //v1 = triangle_positions[2].Cross3(triangle_positions[1]);
+    //v2 = triangle_positions[0].Cross3(triangle_positions[2]);
+    ////point4f.z()==1
+    //if (point4f.Dot(v0)*v0.Dot(triangle_positions[2])>0
+    //    && point4f.Dot(v1) * v1.Dot(triangle_positions[0]) > 0
+    //    && point4f.Dot(v2) * v2.Dot(triangle_positions[1]) > 0)
+    //{
+    //    return true;
+    //}
+    //return false;
+    return (barycentric_args.x() > 0 && barycentric_args.x() < 1)
+        && (barycentric_args.y() > 0 && barycentric_args.y() < 1)
+        && (barycentric_args.z() > 0 && barycentric_args.z() < 1);
 }
 
 float SoftRender::InterpolateZ(const Vector4fAlignas16& barycentric_args, const std::array<Vector4fAlignas16, 3>& triangle_positions)
@@ -155,27 +173,32 @@ SoftRender::ObjContentType::Vertex SoftRender::GetVertex(const Vector4fAlignas16
     return result;
 }
 
-std::array<Vector4fAlignas16, 3> SoftRender::MVPAndViewportTransform(const Vector4fAlignas16 positions[], const Matrix4fAlignas16& mvp_matrix)
+auto SoftRender::MVPAndViewportTransform(const std::array<Vector4fAlignas16, 3>& positions, const Matrix4fAlignas16& mvp_matrix)
+->std::tuple<std::array<Vector4fAlignas16, 3>, std::array<Vector3fAlignas16, 3>>
 {
     //MVP transform
-    std::array<Vector4fAlignas16, 3> result{
+    std::array<Vector4fAlignas16, 3> full_result{
         mvp_matrix* positions[0],
         mvp_matrix* positions[1],
         mvp_matrix* positions[2] };
     //Homogeneous division and viewport transform
-    constexpr float f1 = static_cast<float>(50 - 0.1) / 2.0f;
-    constexpr float f2 = static_cast<float>(50 + 0.1) / 2.0f;
+    //constexpr float f1 = static_cast<float>(50 - 0.1) / 2.0f;
+    //constexpr float f2 = static_cast<float>(50 + 0.1) / 2.0f;
     auto width = static_cast<float>(depth_buffer_.GetWidth());
     auto height = static_cast<float>(depth_buffer_.GetHeight());
-    for (auto& vec : result)
+    for (auto& vec : full_result)
     {
         vec.HomogeneousDivisionSelf();
+    }
+    std::array<Vector3fAlignas16, 3> partial_result{};
+    std::transform(full_result.begin(), full_result.end(), partial_result.begin(), 
+        [](auto&& item) { return Vector3fAlignas16::ToVector3(item); });
+    for (auto& vec : full_result)
+    {
         vec.SetX(0.5f * width * (vec.x() + 1.0f));
         vec.SetY(0.5f * height * (vec.y() + 1.0f));
-        vec.SetZ(vec.z() * f1 + f2);
     }
-
-    return result;
+    return std::make_tuple(full_result, partial_result);
 }
 
 Matrix4fAlignas16 SoftRender::PrecomputeMVPMatrix()
@@ -192,8 +215,11 @@ void SoftRender::SetViewMatrix(const SoftRender::Camera& camera)
         _mm_load_ps(camera.GetPosition().GetHead())
         ));
     t_view_matrix[3][3] = 1.0f;
+
+    auto gaze_tmp = camera.GetPosition() - camera.GetGazePosition();
+    gaze_tmp.NormalizeSelf();
+    __m128 gaze_vector = _mm_load_ps(gaze_tmp.GetHead());//g
     __m128 up_vector = _mm_load_ps(camera.GetUpDirection().GetHead());//t
-    __m128 gaze_vector = _mm_load_ps(camera.GetGazeDirection().GetHead());//g
     __m128 gaze_cross_up = Vector4fAlignas16::Cross3(gaze_vector, up_vector);//gxt
     __m128 gxt_t_low = _mm_unpacklo_ps(gaze_cross_up, up_vector);
     __m128 gxt_t_heigh = _mm_unpackhi_ps(gaze_cross_up, up_vector);
@@ -208,7 +234,7 @@ void SoftRender::SetViewMatrix(const SoftRender::Camera& camera)
     view_matrix_ = r_view_matrix * t_view_matrix;
 }
 
-void SoftRender::SetProjectionMatrix(const float z_near, const float z_far, const std::int32_t width, const std::int32_t height, const float fov_y_degree = 45)
+void SoftRender::SetProjectionMatrix(const float z_near, const float z_far, const std::int32_t width, const std::int32_t height, const float fov_y_degree = 60.0f)
 {
     constexpr float pi = 3.14159265358979323846f;
     float radian_theta = fov_y_degree / 180.0f * pi;
@@ -229,43 +255,53 @@ void SoftRender::SetProjectionMatrix(const float z_near, const float z_far, cons
 void SoftRender::Set24bppRGBPixelColorUnsafe(void* scan0, size_t pixel_index, const ColorRGB24& color)
 {
     void* p_target = reinterpret_cast<decltype(color.r_)*>(scan0) + pixel_index;
-    memcpy(p_target, &color, sizeof(ColorRGB24));
+    memcpy(p_target, &color, sizeof(decltype(color)));
 }
 
-SoftRender::~SoftRender()
+auto SoftRender::Get24bppRGBPixelColorUnsafe(void* scan0, size_t x, size_t y) -> Vector3fAlignasDefault
 {
-    render_target_window_.on_render_.DeleteFunction(render_function_index_);
-    render_target_window_.on_size_changed_.DeleteFunction(size_change_function_index);
+    ColorRGB24 color{};
+    size_t color_index = (x + (y * depth_buffer_.GetWidth())) * sizeof(decltype(color));
+    void* p_target = reinterpret_cast<decltype(color.r_)*>(scan0) + color_index;
+    memcpy(&color, p_target, sizeof(decltype(color)));
+    return Vector3fAlignasDefault{
+        color.r_ / 255.0f,
+        color.g_ / 255.0f,
+        color.b_ / 255.0f
+    };
 }
+
+SoftRender::Camera::Camera(const Vector4fAlignas16& position, const Vector4fAlignas16& gaze_direction, const Vector4fAlignas16& up_direction)
+    :camera_{ position,gaze_direction,up_direction.Normalize() } {}
 
 const Vector4fAlignas16& SoftRender::Camera::GetPosition() const
 {
-    return camera_[0];
+    return camera_[Numerical(DataType::Position)];
 }
 
-const Vector4fAlignas16& SoftRender::Camera::GetGazeDirection() const
+const Vector4fAlignas16& SoftRender::Camera::GetGazePosition() const
 {
-    return camera_[1];
+    return camera_[Numerical(DataType::GazePostion)];
 }
 
 const Vector4fAlignas16& SoftRender::Camera::GetUpDirection() const
 {
-    return camera_[2];
+    return camera_[Numerical(DataType::UpDirection)];
 }
 
-void SoftRender::Camera::SetCameraPosition(const Vector4fAlignas16& position)
+void SoftRender::Camera::SetPosition(const Vector4fAlignas16& position)
 {
-    camera_[0] = position;
+    camera_[Numerical(DataType::Position)] = position;
 }
 
-void SoftRender::Camera::SetCameraGazeDirection(const Vector4fAlignas16& gaze_direction)
+void SoftRender::Camera::SetGazePosition(const Vector4fAlignas16& gaze_direction)
 {
-    camera_[1] = gaze_direction;
+    camera_[Numerical(DataType::GazePostion)] = gaze_direction;
 }
 
-void SoftRender::Camera::SetCameraUpDirection()
+void SoftRender::Camera::SetUpDirection(const Vector4fAlignas16& up_direction)
 {
-    camera_[2] = camera_[0].Cross3(camera_[1]);//此处顺序决定系统采用何种手坐标系
+    camera_[Numerical(DataType::UpDirection)] = up_direction.Normalize();
 }
 
 void SoftRender::SetObjContent(const ObjContentType& p_obj_content)
@@ -285,7 +321,8 @@ EventState SoftRender::Rendering(const RenderEventArgs& event_args)
     //重置背景为黑色
     if (render_target_picture_data.Scan0)
     {
-        memset(render_target_picture_data.Scan0, 0, 
+        //memcpy(render_target_picture_data.Scan0, &background_color_, sizeof(background_color_));
+        memset(render_target_picture_data.Scan0, /*std::numeric_limits<int>::max()*/0, 
             static_cast<size_t>(render_target_picture_data.Width) * static_cast<size_t>(render_target_picture_data.Height) * sizeof(SoftRender::ColorRGB24));
     }
     else
@@ -294,9 +331,11 @@ EventState SoftRender::Rendering(const RenderEventArgs& event_args)
     }
     //设置并计算MVP矩阵
     SetViewMatrix(camera_);
-    SetProjectionMatrix(0.1, 50, 
+    SetProjectionMatrix(0.1f, 50.0f, 
         static_cast<INT>(depth_buffer_.GetWidth()), static_cast<INT>(depth_buffer_.GetHeight()));
+    Matrix4fAlignas16 normal_matrix = (view_matrix_ * model_matrix_).InverseSelf().TransposeSelf();
     Matrix4fAlignas16 mvp_matrix = PrecomputeMVPMatrix();
+    std::array<Vector4fAlignas16, 3> handeled_normal;
     //检查文件是否定义了材质
     if (!p_obj_content_->mtl_range_.empty())//文件定义了材质
     {
@@ -305,13 +344,21 @@ EventState SoftRender::Rendering(const RenderEventArgs& event_args)
     else//文件未定义材质，使用默认材质
     {
         auto& mtls_in_obj = p_obj_content_->mtls_;
-        auto& default_mtl = !mtls_in_obj.empty() ? mtls_in_obj.begin()->second : MtlContent{
-            {}/*Ka*/,{1.0f,1.0f,1.0f}/*Kd*/,{}/*Ks*/,0.5f,0.5f,1.0f
+        static MtlContent tmp_mtl{
+            {0.0004f, 0.0004f, 0.0004f}/*Ka*/,{1.0f,1.0f,1.0f}/*Kd*/,{0.2f,0.2f,0.2f}/*Ks*/,
+            10.0f,//Ns
+            1.0f,//Ni
+            1.0f//d
         };
+        auto& default_mtl = /*!mtls_in_obj.empty() ? mtls_in_obj.begin()->second :*/ tmp_mtl;
         for (auto& t : p_obj_content_->triangles)
         {
             //获得MVP变换后的坐标
-            auto handeled_position = MVPAndViewportTransform(t.position, mvp_matrix);
+            auto [handeled_position,mvp_position] = MVPAndViewportTransform(t.position, mvp_matrix);
+            for (size_t i = 0; i < 3; i++)
+            {
+                handeled_normal[i] = normal_matrix * Vector4fAlignas16(t.normal[i], HomogeneousType::Vector);
+            }
             //光栅化阶段
             //确定光栅化范围
             __m128 position_0 = _mm_load_ps(handeled_position[0].GetHead());
@@ -325,132 +372,149 @@ EventState SoftRender::Rendering(const RenderEventArgs& event_args)
             auto raster_height_max = std::min(depth_buffer_.GetHeight(), static_cast<size_t>(std::max(0.0f, position_result.y())));
             tmp_result = _mm_floor_ps(_mm_min_ps(position_2, _mm_min_ps(position_0, position_1)));
             _mm_store_ps(position_result.GetHead(), tmp_result);
-            auto raster_width_min = static_cast<size_t>(std::max(0.0f, position_result.x()));
-            auto raster_height_min = static_cast<size_t>(std::max(0.0f, position_result.y()));
+            auto raster_width_min = std::min(depth_buffer_.GetWidth(), static_cast<size_t>(std::max(0.0f, position_result.x())));
+            auto raster_height_min = std::min(depth_buffer_.GetHeight(), static_cast<size_t>(std::max(0.0f, position_result.y())));
             //默认使用MSAA4x
             for (size_t y = raster_height_min; y < raster_height_max; y++)
             {
                 for (size_t x = raster_width_min; x < raster_width_max; x++)
                 {
-                    static Vector8f<32> msaa_sample_points{};
-                    static struct
-                    {
-                        Vector4fAlignas16 barycentric_args_ = {};
-                        float z_ = 0.0f;
-                        bool z_test_result_ = false;
-                    } msaa_samples[4]{};
-                    //手动循环展开四个采样点的处理
-                    //处理采样点12
-                    static __m128 offset_12 = _mm_add_ps(
-                        _mm_set_ps1(0.5f),
-                        _mm_set_ps(
-                            -0.1115987872501496f/*y*/, 0.33547833116953445f, //x,第二象限
-                            0.33547833116953445f/*y*/, 0.1115987872501496f//x,第一象限
-                        ));
-                    __m128 msaa_sample_12 = _mm_set_ps(
-                        static_cast<float>(y), static_cast<float>(x),
-                        static_cast<float>(y), static_cast<float>(x));
-                    msaa_sample_12 = _mm_add_ps(msaa_sample_12, offset_12);
-                    _mm_store_ps(msaa_sample_points.GetHead(), msaa_sample_12);
+                    //static Vector8f<32> msaa_sample_points{};
+                    //static struct
+                    //{
+                    //    Vector4fAlignas16 barycentric_args_ = {};
+                    //    float z_ = 0.0f;
+                    //    bool z_test_result_ = false;
+                    //} msaa_samples[4]{};
+                    ////手动循环展开四个采样点的处理
+                    ////处理采样点12
+                    //static __m128 offset_12 = _mm_add_ps(
+                    //    _mm_set_ps1(0.5f),
+                    //    _mm_set_ps(
+                    //        -0.1115987872501496f/*y*/, 0.33547833116953445f, //x,第二象限
+                    //        0.33547833116953445f/*y*/, 0.1115987872501496f//x,第一象限
+                    //    ));
+                    //__m128 msaa_sample_12 = _mm_set_ps(
+                    //    static_cast<float>(y), static_cast<float>(x),
+                    //    static_cast<float>(y), static_cast<float>(x));
+                    //msaa_sample_12 = _mm_add_ps(msaa_sample_12, offset_12);
+                    //_mm_store_ps(msaa_sample_points.GetHead(), msaa_sample_12);
 
-                    msaa_samples[0].barycentric_args_ = GetBarycentricArgs(
-                        Vector4fAlignas16{ msaa_sample_points.x(),msaa_sample_points.y() }, handeled_position);
-                    if (IsPointsInTriangle2D(msaa_samples[0].barycentric_args_.z()))
-                    {
-                        float z = InterpolateZ(msaa_samples[0].barycentric_args_, handeled_position);
-                        msaa_samples[0].z_ = z;
-                        msaa_samples[0].z_test_result_ = depth_buffer_.TryToSetDepth(x, y, 0, z);
-                    }
+                    //auto msaa_point_1 = Vector4fAlignas16{ msaa_sample_points.x(),msaa_sample_points.y(),1.0f };
+                    //msaa_samples[0].barycentric_args_ = GetBarycentricArgs(msaa_point_1, handeled_position);
+                    //if (IsPointInTriangle(msaa_samples[0].barycentric_args_))
+                    //{
+                    //    float z = InterpolateZ(msaa_samples[0].barycentric_args_, handeled_position);
+                    //    msaa_samples[0].z_ = z;
+                    //    msaa_samples[0].z_test_result_ = depth_buffer_.TryToSetDepth(x, y, 0, z);
+                    //}
 
-                    msaa_samples[1].barycentric_args_ = GetBarycentricArgs(
-                        Vector4fAlignas16{ msaa_sample_points.z(),msaa_sample_points.w() }, handeled_position);
-                    if (IsPointsInTriangle2D(msaa_samples[1].barycentric_args_.z()))
-                    {
-                        float z = InterpolateZ(msaa_samples[1].barycentric_args_, handeled_position);
-                        msaa_samples[1].z_ = z;
-                        msaa_samples[1].z_test_result_ = depth_buffer_.TryToSetDepth(x, y, 1, z);
-                    }
+                    //auto msaa_point_2 = Vector4fAlignas16{ msaa_sample_points.z(),msaa_sample_points.w(),1.0f };
+                    //msaa_samples[1].barycentric_args_ = GetBarycentricArgs(msaa_point_2, handeled_position);
+                    //if (IsPointInTriangle(msaa_samples[1].barycentric_args_))
+                    //{
+                    //    float z = InterpolateZ(msaa_samples[1].barycentric_args_, handeled_position);
+                    //    msaa_samples[1].z_ = z;
+                    //    msaa_samples[1].z_test_result_ = depth_buffer_.TryToSetDepth(x, y, 1, z);
+                    //}
 
-                    //处理采样点34
-                    static __m128 offset_34 = _mm_add_ps(
-                        _mm_set_ps1(0.5f),
-                        _mm_set_ps(
-                            -0.33547833116953445f/*y*/, 0.1115987872501496f,//x,第四象限
-                            -0.33547833116953445f/*y*/, -0.1115987872501496f//x,第三象限
-                        ));
-                    __m128 msaa_sample_34 = _mm_set_ps(
-                        static_cast<float>(y), static_cast<float>(x),
-                        static_cast<float>(y), static_cast<float>(x));
-                    msaa_sample_34 = _mm_add_ps(msaa_sample_34, offset_34);
-                    _mm_store_ps(msaa_sample_points.GetCentreHead(), msaa_sample_34);
+                    ////处理采样点34
+                    //static __m128 offset_34 = _mm_add_ps(
+                    //    _mm_set_ps1(0.5f),
+                    //    _mm_set_ps(
+                    //        -0.33547833116953445f/*y*/, 0.1115987872501496f,//x,第四象限
+                    //        -0.33547833116953445f/*y*/, -0.1115987872501496f//x,第三象限
+                    //    ));
+                    //__m128 msaa_sample_34 = _mm_set_ps(
+                    //    static_cast<float>(y), static_cast<float>(x),
+                    //    static_cast<float>(y), static_cast<float>(x));
+                    //msaa_sample_34 = _mm_add_ps(msaa_sample_34, offset_34);
+                    //_mm_store_ps(msaa_sample_points.GetCentreHead(), msaa_sample_34);
 
-                    msaa_samples[2].barycentric_args_ = GetBarycentricArgs(
-                        Vector4fAlignas16{ msaa_sample_points.Get<4>(),msaa_sample_points.Get<5>() },
-                        handeled_position);
-                    if (IsPointsInTriangle2D(msaa_samples[2].barycentric_args_.z()))
-                    {
-                        float z = InterpolateZ(msaa_samples[2].barycentric_args_, handeled_position);
-                        msaa_samples[2].z_ = z;
-                        msaa_samples[2].z_test_result_ = depth_buffer_.TryToSetDepth(x, y, 2, z);
-                    }
+                    //auto msaa_point_3 = Vector4fAlignas16{ msaa_sample_points.Get<4>(),msaa_sample_points.Get<5>(),1.0f };
+                    //msaa_samples[2].barycentric_args_ = GetBarycentricArgs(msaa_point_3, handeled_position);
+                    //if (IsPointInTriangle(msaa_samples[2].barycentric_args_))
+                    //{
+                    //    msaa_samples[2].barycentric_args_ = GetBarycentricArgs(msaa_point_3, handeled_position);
+                    //    float z = InterpolateZ(msaa_samples[2].barycentric_args_, handeled_position);
+                    //    msaa_samples[2].z_ = z;
+                    //    msaa_samples[2].z_test_result_ = depth_buffer_.TryToSetDepth(x, y, 2, z);
+                    //}
 
-                    msaa_samples[3].barycentric_args_ = GetBarycentricArgs(
-                        Vector4fAlignas16{ msaa_sample_points.Get<6>(),msaa_sample_points.Get<7>() },
-                        handeled_position);
-                    if (IsPointsInTriangle2D(msaa_samples[3].barycentric_args_.z()))
-                    {
-                        float z = InterpolateZ(msaa_samples[3].barycentric_args_, handeled_position);
-                        msaa_samples[3].z_ = z;
-                        msaa_samples[3].z_test_result_ = depth_buffer_.TryToSetDepth(x, y, 3, z);
-                    }
+                    //auto msaa_point_4 = Vector4fAlignas16{ msaa_sample_points.Get<6>(),msaa_sample_points.Get<7>(),1.0f };
+                    //msaa_samples[3].barycentric_args_ = GetBarycentricArgs(msaa_point_4, handeled_position);
+                    //if (IsPointInTriangle(msaa_samples[3].barycentric_args_))
+                    //{
+                    //    float z = InterpolateZ(msaa_samples[3].barycentric_args_, handeled_position);
+                    //    msaa_samples[3].z_ = z;
+                    //    msaa_samples[3].z_test_result_ = depth_buffer_.TryToSetDepth(x, y, 3, z);
+                    //}
 
                     Vector3fAlignasDefault average_color{ 0.0f,0.0f,0.0f };
-                    bool use_single_sample = true;
-                    for (auto& sample : msaa_samples)//MSAA四个采样点均有效则使用中间的点进行计算
+                    //bool use_single_sample = true;
+                    //for (auto& sample : msaa_samples)//MSAA四个采样点均有效则使用中间的点进行计算
+                    //{
+                    //    use_single_sample = use_single_sample && sample.z_test_result_;
+                    //}
+                    //ObjContentType::Vertex vertex_to_render{};
+                    //if (use_single_sample)
+                    //{
+                    //    Vector4fAlignas16 centre_barycentric_args{ 
+                    //        GetBarycentricArgs(Vector4fAlignas16{static_cast<float>(x) + 0.5f,static_cast<float>(y) + 0.5f}, 
+                    //        handeled_position) };
+                    //    float average_z = 0;
+                    //    for (auto& sample : msaa_samples)
+                    //    {
+                    //        average_z += sample.z_;
+                    //    }
+                    //    average_z /= 4.0f;
+                    //    vertex_to_render = GetVertex(centre_barycentric_args, 
+                    //        static_cast<float>(x), static_cast<float>(y), average_z, t);
+                    //    average_color = DefaultShader(vertex_to_render, default_mtl, camera_.GetPosition());
+                    //}
+                    //else
+                    //{
+                    //    Vector3fAlignasDefault back_color = Get24bppRGBPixelColorUnsafe(render_target_picture_data.Scan0, x, y);
+                    //    size_t msaa_sample_index = 0;
+                    //    for (auto& sample : msaa_samples)
+                    //    {
+                    //        if (sample.z_test_result_)
+                    //        {
+                    //            vertex_to_render = GetVertex(sample.barycentric_args_,
+                    //                msaa_sample_points.Get(msaa_sample_index),
+                    //                msaa_sample_points.Get(msaa_sample_index + 1),
+                    //                sample.z_, t);
+                    //            msaa_sample_index += 2;
+                    //            average_color += DefaultShader(vertex_to_render, default_mtl, camera_.GetPosition());
+                    //        }
+                    //        else
+                    //        {
+                    //            average_color += back_color;
+                    //        }
+                    //    }
+                    //    average_color /= 4.0f;
+                    //}
+                    float centre_x = static_cast<float>(x) + 0.5f;
+                    float centre_y = static_cast<float>(y) + 0.5f;
+                    Vector4fAlignas16 centre_barycentric_args{
+                        GetBarycentricArgs(Vector4fAlignas16{centre_x,centre_y,1.0f},handeled_position) };
+                    if (IsPointInTriangle(centre_barycentric_args))
                     {
-                        use_single_sample = use_single_sample && sample.z_test_result_;
-                    }
-                    ObjContentType::Vertex vertex_to_render{};
-                    if (use_single_sample)
-                    {
-                        Vector4fAlignas16 centre_barycentric_args{ 
-                            GetBarycentricArgs(Vector4fAlignas16{static_cast<float>(x),static_cast<float>(y)}, 
-                            handeled_position) };
-                        float average_z = 0;
-                        for (auto& sample : msaa_samples)
+                        float z = InterpolateZ(centre_barycentric_args, handeled_position);
+                        if (depth_buffer_.TryToSetDepth(x, y, 0, z))
                         {
-                            average_z += sample.z_;
+                            auto vertex_to_render = GetVertex(centre_barycentric_args,
+                                centre_x, centre_y, z, t);
+                            vertex_to_render.normal = Vector3fAlignas16::ToVector3(Interpolate3D(centre_barycentric_args, 1.0f, handeled_normal));
+                            auto interpolated_view_position = Interpolate3D(centre_barycentric_args, 1.0f, mvp_position);
+                            average_color = DefaultShader(vertex_to_render, default_mtl, camera_.GetPosition(), interpolated_view_position);
+                            ColorRGB24 color_to_draw(average_color);
+                            size_t color_index = (x + (y * depth_buffer_.GetWidth())) * sizeof(ColorRGB24);
+                            Set24bppRGBPixelColorUnsafe(render_target_picture_data.Scan0, color_index, color_to_draw);
+
                         }
-                        average_z /= 4.0f;
-                        vertex_to_render = GetVertex(centre_barycentric_args, 
-                            static_cast<float>(x), static_cast<float>(y), average_z, t);
-                        average_color = DefaultShader(vertex_to_render, default_mtl, camera_.GetPosition());
                     }
-                    else
-                    {
-                        int valid_sample_count = 0;
-                        size_t msaa_sample_index = 0;
-                        for (auto& sample : msaa_samples)
-                        {
-                            if (sample.z_test_result_)
-                            {
-                                vertex_to_render = GetVertex(sample.barycentric_args_,
-                                    msaa_sample_points.Get(msaa_sample_index),
-                                    msaa_sample_points.Get(msaa_sample_index + 1),
-                                    sample.z_, t);
-                                msaa_sample_index += 2;
-                                average_color += DefaultShader(vertex_to_render, default_mtl, camera_.GetPosition());
-                                valid_sample_count++;
-                            }
-                        }
-                        average_color /= static_cast<float>(valid_sample_count);
-                    }
-                    ColorRGB24 color_to_draw{
-                        .r_ = static_cast<int8_t>(average_color.Get<0>() * 255.0f),
-                        .g_ = static_cast<int8_t>(average_color.Get<1>() * 255.0f),
-                        .b_ = static_cast<int8_t>(average_color.Get<2>() * 255.0f) };
-                    size_t color_index = (x + (y * depth_buffer_.GetWidth())) * sizeof(ColorRGB24);
-                    Set24bppRGBPixelColorUnsafe(render_target_picture_data.Scan0, color_index, color_to_draw);
+
                 }
             }
         }
@@ -465,7 +529,6 @@ EventState SoftRender::Rendering(const RenderEventArgs& event_args)
 
 EventState SoftRender::OnWindowSizeChange(const SizeChangedEventArgs& event_args)
 {
-    depth_buffer_.ResizeDepthBuffer(event_args.new_width_, event_args.new_height_);
     up_render_picture_.reset();
     auto tmp_up = std::make_unique<Gdiplus::Bitmap>(event_args.new_width_, event_args.new_height_, g_softrender_bitmap_pixel_format);
     up_render_picture_.swap(tmp_up);
@@ -473,7 +536,14 @@ EventState SoftRender::OnWindowSizeChange(const SizeChangedEventArgs& event_args
 }
 
 SoftRender::DepthBuffer::DepthBuffer(Window& target_window, size_t width, size_t height) 
-    :width_{ width }, height_{ height } {}
+    :width_{ width }, height_{ height },
+    size_change_event_guard_(target_window.on_size_changed_, [this](const SizeChangedEventArgs& event_args)->EventState {
+        ResizeDepthBuffer(event_args.new_width_, event_args.new_height_);
+        return EventState::Continue;
+    }) 
+{
+    ResizeDepthBuffer(width, height);
+}
 
 void SoftRender::DepthBuffer::ResizeDepthBuffer(size_t width, size_t height)
 {
@@ -483,14 +553,14 @@ void SoftRender::DepthBuffer::ResizeDepthBuffer(size_t width, size_t height)
     {
         depth_buffer_.reserve(new_size);
     }
-    depth_buffer_.resize(new_size, std::nanf(""));
+    depth_buffer_.resize(new_size, default_depth_);
     width_ = width;
     height_ = height;
 }
 
 void SoftRender::DepthBuffer::ResetDepthBuffer()
 {
-    std::fill(depth_buffer_.begin(), depth_buffer_.end(), std::nanf(""));
+    std::fill(depth_buffer_.begin(), depth_buffer_.end(), default_depth_);
 }
 
 float SoftRender::DepthBuffer::GetDepth(size_t x, size_t y, size_t sample_index) const
@@ -521,4 +591,23 @@ bool SoftRender::DepthBuffer::TryToSetDepth(size_t x, size_t y, size_t sample_in
         SetDepth(x, y, sample_index, new_depth);
     }
     return result;
+}
+
+decltype(SoftRender::DepthBuffer::default_depth_) SoftRender::DepthBuffer::default_depth_ = -1.0f * std::numeric_limits<float>::infinity();
+
+SoftRender::ColorRGB24::ColorRGB24(const Vector3fAlignasDefault& float_color)
+{
+    auto tmp = static_cast<std::uint16_t>(float_color.x() * 255.0f);
+    r_ = LimitNumber(tmp);
+    tmp = static_cast<std::uint16_t>(float_color.y() * 255.0f);
+    g_ = LimitNumber(tmp);
+    tmp = static_cast<std::uint16_t>(float_color.z() * 255.0f);
+    b_ = LimitNumber(tmp);
+}
+
+std::uint8_t SoftRender::ColorRGB24::LimitNumber(std::uint16_t number)
+{
+    std::uint16_t tmp = std::min(number, static_cast<std::uint16_t>(255));
+    tmp = std::max(tmp, static_cast<std::uint16_t>(0));
+    return static_cast<std::uint8_t>(tmp);
 }

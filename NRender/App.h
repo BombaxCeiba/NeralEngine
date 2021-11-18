@@ -23,7 +23,8 @@ public:
     void DeleteWindow(Window& p_window);
     bool AddWindow(UniqueWindowPointer up_window);
     bool AddAsMainWindow(UniqueWindowPointer up_window);
-    auto GetWindow(const std::wstring& window_name)->WindowHashMap::iterator;
+    auto GetWindow(const std::wstring& window_name)->Window&;
+    auto GetWindow(const std::wstring& window_name)const->const Window&;
     int32_t Run();
     HWND main_window_;
     QuitMode quit_mode_ = QuitMode::WhenAllWindowClosed;

@@ -12,6 +12,13 @@ template<typename RetTy = FunctionReturnType> requires std::is_same_v<RetTy, Fun
 std::enable_if_t<align == 16, RetTy>\
 
 #define SHUFFLE_SELF_PS(self, parameter) _mm_shuffle_ps((self), (self), parameter)
+#define SHUFFLE_0101_PS(vec0,vec1) _mm_movelh_ps((vec0),(vec1))
+#define SHUFFLE_2323_PS(vec0,vec1) _mm_movehl_ps((vec0),(vec1))
+#define SHUFFLE_0022_PS(vec) _mm_moveldup_ps((vec))
+#define SHUFFLE_1133_PS(vec) _mm_movehdup_ps((vec))
+
+#define ENABLE_WHEN_ALIGNAS_2_ARGS(x, align) template<typename = std::enable_if_t<(align == (x))>>
+#define ENABLE_WHEN_ALIGNAS_1_ARGS(x) ENABLE_WHEN_ALIGNAS_2_ARGS(x, align)
 
 inline static __m128 g_m128Infinity = { 0x7F800000, 0x7F800000, 0x7F800000, 0x7F800000 };
 inline static __m128 g_m128QNaN = { 0x7FC00000, 0x7FC00000, 0x7FC00000, 0x7FC00000 };
@@ -82,17 +89,17 @@ public:
         return numbers_[0];
     }
     template<typename Ret = __Ty>
-    std::enable_if_t<__Size >= 2, Ret> y() const
+    std::enable_if_t<(__Size >= 2), Ret> y() const
     {
         return numbers_[1];
     }
     template<typename Ret = __Ty>
-    std::enable_if_t<__Size >= 3, Ret> z() const
+    std::enable_if_t<(__Size >= 3), Ret> z() const
     {
         return numbers_[2];
     }
     template<typename Ret = __Ty>
-    std::enable_if_t<__Size >= 4, Ret> w() const
+    std::enable_if_t<(__Size >= 4), Ret> w() const
     {
         return numbers_[3];
     }
@@ -116,7 +123,7 @@ public:
         numbers_[3] = num;
     }
     template<size_t i, typename Ret = __Ty> requires std::is_same_v<Ret, __Ty>
-    std::enable_if_t < i < __Size, Ret> Get() const
+    std::enable_if_t <(i < __Size), Ret> Get() const
     {
         return numbers_[i];
     }
@@ -150,6 +157,15 @@ public:
         }
         return result;
     }
+    __TargetType operator-(const __TargetType& rhs_vec) const
+    {
+        __TargetType result{};
+        for (size_t i = 0; i < __Size; i++)
+        {
+            result.numbers_[i] = numbers_[i] - rhs_vec.numbers_[i];
+        }
+        return result;
+    }
     __TargetType operator*(const __Ty rhs_num) const
     {
         __TargetType result{};
@@ -168,6 +184,14 @@ public:
         }
         return result;
     }
+    __TargetType& operator*=(const __Ty rhs_num)
+    {
+        for (size_t i = 0; i < __Size; i++)
+        {
+            numbers_[i] *= rhs_num;
+        }
+        return *(reinterpret_cast<__TargetType*>(this));
+    }
     __TargetType& operator+=(const __TargetType rhs_vec)
     {
         for (size_t i = 0; i < __Size; i++)
@@ -175,6 +199,15 @@ public:
             numbers_[i] += rhs_vec.numbers_[i];
         }
         return *(reinterpret_cast<__TargetType*>(this));
+    }
+    __TargetType operator/(const __Ty rhs_num) const
+    {
+        __TargetType result{};
+        for (size_t i = 0; i < __Size; i++)
+        {
+            result.numbers_[i] = numbers_[i] / rhs_num;
+        }
+        return result;
     }
     __TargetType& operator/=(const __Ty rhs_num)
     {
@@ -249,6 +282,13 @@ public:
         };
         return result;
     }
+    template<size_t RHSAlign, typename RHS>
+    Vector3f(const VectorBase<FigureType, 3, RHSAlign, RHS>& rhs_vec3)
+    {
+        Base::numbers_[0] = rhs_vec3.Get<0>();
+        Base::numbers_[1] = rhs_vec3.Get<1>();
+        Base::numbers_[2] = rhs_vec3.Get<2>();
+    }
     /*Vector3f& operator+=(const Vector3f& rhs_vec)
     {
         return (reinterpret_cast<Base*>(this))->operator+=(rhs_vec);
@@ -322,8 +362,8 @@ public:
         return result;
     }
 
-    template<typename ArgTy = __m128> requires std::is_same_v<ArgTy, __m128>
-    static std::enable_if_t<align == 16, __m128> Cross3(const __m128 lhs_vec, const __m128 rhs_vec)
+    ENABLE_WHEN_ALIGNAS_1_ARGS(16)
+    static __m128 Cross3(const __m128 lhs_vec, const __m128 rhs_vec)
     {
         __m128 tmp0 = _mm_shuffle_ps(lhs_vec, lhs_vec, _MM_SHUFFLE(3, 0, 2, 1));
         __m128 tmp1 = _mm_shuffle_ps(rhs_vec, rhs_vec, _MM_SHUFFLE(3, 1, 0, 2));
@@ -341,23 +381,22 @@ public:
         std::int32_t mask = _mm_movemask_ps(result);
         return mask == 0xf;
     }
-    template<typename RetTy = FigureType> requires std::is_same_v<RetTy, FigureType>
-        std::enable_if_t<align == 16, RetTy> Dot(const Vector4f& rhs_vec) const
-        {
-            __m128 lhs = _mm_load_ps(this->GetHead());
-            __m128 rhs = _mm_load_ps(rhs_vec.GetHead());
-            Vector4f<16> tmp_result{};
-            _mm_store_ps(tmp_result.GetHead(), _mm_mul_ps(lhs, rhs));
-            float result = 0.0f;
-            for (auto num:tmp_result)
-            {
-                result += num;
-            }
-            return result;
-        }
 
-    template<typename RetTy = FigureType> requires std::is_same_v<RetTy, FigureType>
-    std::enable_if_t<align == 16, RetTy> Norm() const
+    FigureType Dot(const Vector4f<16>& rhs_vec) const
+    {
+        __m128 lhs = _mm_load_ps(this->GetHead());
+        __m128 rhs = _mm_load_ps(rhs_vec.GetHead());
+        Vector4f<16> tmp_result{};
+        _mm_store_ps(tmp_result.GetHead(), _mm_mul_ps(lhs, rhs));
+        float result = 0.0f;
+        for (auto num:tmp_result)
+        {
+            result += num;
+        }
+        return result;
+    }
+    [[nodiscard]]
+    FigureType Norm() const
     {
         __m128 all_numbers = _mm_load_ps(this->GetHead());
         all_numbers = _mm_mul_ps(all_numbers, all_numbers);
@@ -367,8 +406,8 @@ public:
         _mm_store_ps(result.GetHead(), all_numbers);
         return std::sqrtf(result.x());
     }
-    template<typename RetTy = void> requires std::is_same_v<RetTy, void>
-    std::enable_if_t<align == 16, RetTy> NormalizeSelf()
+    ENABLE_WHEN_ALIGNAS_1_ARGS(16)
+    void NormalizeSelf()
     {
         __m128 source_square = _mm_load_ps(this->GetHead());
         __m128 source_numbers = source_square;
@@ -386,8 +425,9 @@ public:
             _mm_andnot_ps(source_square, g_m128QNaN),
             _mm_and_ps(source_numbers, source_square)));
     }
-    template<typename RetTy = Vector4f<16>> requires std::is_same_v<RetTy, Vector4f<16>>
-    std::enable_if_t<align == 16, RetTy> Normalize() const
+    ENABLE_WHEN_ALIGNAS_1_ARGS(16)
+    [[nodiscard]]
+    Vector4f<16> Normalize() const
     {
         __m128 source_square = _mm_load_ps(this->GetHead());
         __m128 source_numbers = source_square;
@@ -400,20 +440,23 @@ public:
         zero_mask = _mm_cmpneq_ps(zero_mask, all_numbers_be_div);
         source_square = _mm_cmpneq_ps(source_square, g_m128Infinity);
         source_numbers = _mm_div_ps(source_numbers, all_numbers_be_div);
-        source_numbers = _mm_add_ps(source_numbers, zero_mask);
-        RetTy return_value{};
+        source_numbers = _mm_and_ps(source_numbers, zero_mask);
+        Vector4f<16> return_value{};
         _mm_store_ps(return_value.GetHead(), _mm_or_ps(
             _mm_andnot_ps(source_square, g_m128QNaN),
             _mm_and_ps(source_numbers, source_square)));
         return return_value;
     }
-    template<typename RetTy = void> requires std::is_same_v<RetTy, void>
-    std::enable_if_t<align == 16, RetTy> HomogeneousDivisionSelf()
+    ENABLE_WHEN_ALIGNAS_1_ARGS(16)
+    void HomogeneousDivisionSelf()
     {
         //FigureType w = this->w();
-        __m128 source = _mm_load_ps(this->GetHead());
-        __m128 divisor = SHUFFLE_SELF_PS(source, _MM_SHUFFLE(3, 3, 3, 3));//w
-        _mm_store_ps(this->GetHead(), _mm_div_ps(source, divisor));
+        if (this->w() != 0) 
+        {
+            __m128 source = _mm_load_ps(this->GetHead());
+            __m128 divisor = SHUFFLE_SELF_PS(source, _MM_SHUFFLE(3, 3, 3, 3));//w
+            _mm_store_ps(this->GetHead(), _mm_div_ps(source, divisor));
+        }
         //this->SetW(1.0f / w);
     }
 
@@ -562,7 +605,7 @@ public:
         }
         return true;
     }
-    static __TargetType IdentityMatrix()
+    constexpr static __TargetType IdentityMatrix()
     {
         __TargetType identity_matrix = {};
         for (auto i = 0; i < identity_matrix.size(); i++)
@@ -624,15 +667,127 @@ public:
         Base::column_[2] = vec2;
         Base::column_[3] = vec3;
     }
-    //TODO:改写为按列计算的乘法
+//reference from https://lxjk.github.io/2017/09/03/Fast-4x4-Matrix-Inverse-with-SSE-SIMD-Explained.html
+private:
+    ENABLE_WHEN_ALIGNAS_1_ARGS(16)
+    inline __m128 Matrix2fMultiply(__m128 lhs, __m128 rhs)
+    {
+        return _mm_add_ps(
+            _mm_mul_ps(lhs, SHUFFLE_SELF_PS(rhs, _MM_SHUFFLE(0, 3, 0, 3))),
+            _mm_mul_ps(SHUFFLE_SELF_PS(lhs, _MM_SHUFFLE(1, 0, 3, 2)), SHUFFLE_SELF_PS(rhs, _MM_SHUFFLE(2, 1, 2, 1))));
+    }
+    ENABLE_WHEN_ALIGNAS_1_ARGS(16)
+    inline __m128 Matrix2fMulAdjMatrix2f(__m128 lhs, __m128 rhs)
+    {
+        return _mm_sub_ps(
+            _mm_mul_ps(SHUFFLE_SELF_PS(lhs, _MM_SHUFFLE(3, 3, 0, 0)), rhs),
+            _mm_mul_ps(SHUFFLE_SELF_PS(lhs, _MM_SHUFFLE(1, 1, 2, 2)), SHUFFLE_SELF_PS(rhs, _MM_SHUFFLE(2, 3, 0, 1))));
+    }
+    ENABLE_WHEN_ALIGNAS_1_ARGS(16)
+    inline __m128 AdjMatrix2fMulMatrix2f(__m128 lhs, __m128 rhs)
+    {
+        return _mm_sub_ps(
+            _mm_mul_ps(lhs, SHUFFLE_SELF_PS(rhs, _MM_SHUFFLE(3, 0, 3, 0))),
+            _mm_mul_ps(SHUFFLE_SELF_PS(lhs, _MM_SHUFFLE(1, 0, 3, 2)), SHUFFLE_SELF_PS(rhs, _MM_SHUFFLE(2, 1, 2, 1))));
+    }
+public:
+    ENABLE_WHEN_ALIGNAS_1_ARGS(16)
+    Matrix4f InverseSelf()
+    {
+        //use __m128 as matrix2f
+        //the data in memory looks like A1 A2 A3 A4
+        //this can be seem as |A B|
+        //                    |C D|
+        __m128 column_0 = _mm_load_ps(this->template GetColumnHead<0>());
+        __m128 column_1 = _mm_load_ps(this->template GetColumnHead<1>());
+        __m128 column_2 = _mm_load_ps(this->template GetColumnHead<2>());
+        __m128 column_3 = _mm_load_ps(this->template GetColumnHead<3>());
+
+        __m128 A = SHUFFLE_0101_PS(column_0, column_1);
+        __m128 C = SHUFFLE_2323_PS(column_0, column_1);
+        __m128 B = SHUFFLE_0101_PS(column_2, column_3);
+        __m128 D = SHUFFLE_2323_PS(column_2, column_3);
+
+        A = SHUFFLE_SELF_PS(A, _MM_SHUFFLE(0, 2, 1, 3));
+        C = SHUFFLE_SELF_PS(B, _MM_SHUFFLE(0, 2, 1, 3));
+        B = SHUFFLE_SELF_PS(C, _MM_SHUFFLE(0, 2, 1, 3));
+        D = SHUFFLE_SELF_PS(D, _MM_SHUFFLE(0, 2, 1, 3));
+
+        // determinant as (|A| |B| |C| |D|)
+        __m128 dSub = _mm_sub_ps(
+            _mm_mul_ps(_mm_shuffle_ps(column_0, column_2, _MM_SHUFFLE(0, 2, 0, 2)), _mm_shuffle_ps(column_1, column_3, _MM_SHUFFLE(1, 3, 1, 3))),
+            _mm_mul_ps(_mm_shuffle_ps(column_0, column_2, _MM_SHUFFLE(1, 3, 1, 3)), _mm_shuffle_ps(column_1, column_3, _MM_SHUFFLE(0, 2, 0, 2)))
+        );
+        __m128 dA = SHUFFLE_SELF_PS(dSub, _MM_SHUFFLE(0, 0, 0, 0));
+        __m128 dB = SHUFFLE_SELF_PS(dSub, _MM_SHUFFLE(1, 1, 1, 1));
+        __m128 dC = SHUFFLE_SELF_PS(dSub, _MM_SHUFFLE(2, 2, 2, 2));
+        __m128 dD = SHUFFLE_SELF_PS(dSub, _MM_SHUFFLE(3, 3, 3, 3));
+
+        __m128 DAsteriskC = Matrix2fMulAdjMatrix2f(D, C);
+        __m128 AAsteriskB = Matrix2fMulAdjMatrix2f(A, B);
+        __m128 X = _mm_sub_ps(_mm_mul_ps(dD, A), Matrix2fMultiply(B, DAsteriskC));
+        __m128 W = _mm_sub_ps(_mm_mul_ps(dA, D), Matrix2fMultiply(C, AAsteriskB));
+
+        __m128 dM = _mm_mul_ps(dA, dD);
+
+        __m128 Y = _mm_sub_ps(_mm_mul_ps(dB, C), Matrix2fMulAdjMatrix2f(D, AAsteriskB));
+        __m128 Z = _mm_sub_ps(_mm_mul_ps(dC, B), Matrix2fMulAdjMatrix2f(A, DAsteriskC));
+
+        dM = _mm_add_ps(dM, _mm_mul_ps(dB, dC));
+
+        __m128 tr = _mm_mul_ps(AAsteriskB, SHUFFLE_SELF_PS(DAsteriskC, _MM_SHUFFLE(0, 2, 1, 3)));
+        tr = _mm_hadd_ps(tr, tr);
+        tr = _mm_hadd_ps(tr, tr);
+        dM = _mm_sub_ps(dM, tr);
+
+        const __m128 adjSignMask = _mm_setr_ps(1.0f, -1.0f, -1.0f, 1.0f);
+        __m128 rDetM = _mm_div_ps(adjSignMask, dM);
+
+        X = _mm_mul_ps(X, rDetM);
+        Y = _mm_mul_ps(Y, rDetM);
+        Z = _mm_mul_ps(Z, rDetM);
+        W = _mm_mul_ps(W, rDetM);
+
+        column_0 = _mm_shuffle_ps(X, Z, _MM_SHUFFLE(3, 2, 3, 2));
+        column_1 = _mm_shuffle_ps(X, Z, _MM_SHUFFLE(1, 0, 1, 0));
+        column_2 = _mm_shuffle_ps(Z, W, _MM_SHUFFLE(3, 2, 3, 2));
+        column_3 = _mm_shuffle_ps(Z, W, _MM_SHUFFLE(1, 0, 1, 0));
+
+        _mm_store_ps(this->template GetColumnHead<0>(), column_0);
+        _mm_store_ps(this->template GetColumnHead<1>(), column_1);
+        _mm_store_ps(this->template GetColumnHead<2>(), column_2);
+        _mm_store_ps(this->template GetColumnHead<3>(), column_3);
+
+        return *this;
+    }
+    ENABLE_WHEN_ALIGNAS_1_ARGS(16)
+    Matrix4f TransposeSelf()
+    {
+        __m128 c0 = _mm_load_ps(this->template GetColumnHead<0>());
+        __m128 c1 = _mm_load_ps(this->template GetColumnHead<1>());
+        __m128 c01L = _mm_unpacklo_ps(c0, c1); 
+        __m128 c01H = _mm_unpackhi_ps(c0, c1); 
+
+        __m128 c2 = _mm_load_ps(this->template GetColumnHead<2>()); 
+        __m128 c3 = _mm_load_ps(this->template GetColumnHead<3>()); 
+        __m128 c23L = _mm_unpacklo_ps(c2, c3);
+        __m128 c23H = _mm_unpackhi_ps(c2, c3);
+
+        _mm_store_ps(this->template GetColumnHead<0>(), _mm_shuffle_ps(c01L, c23L, _MM_SHUFFLE(1, 0, 1, 0)));
+        _mm_store_ps(this->template GetColumnHead<1>(), _mm_shuffle_ps(c01L, c23L, _MM_SHUFFLE(3, 2, 3, 2)));
+        _mm_store_ps(this->template GetColumnHead<2>(), _mm_shuffle_ps(c01H, c23H, _MM_SHUFFLE(1, 0, 1, 0)));
+        _mm_store_ps(this->template GetColumnHead<3>(), _mm_shuffle_ps(c01H, c23H, _MM_SHUFFLE(3, 2, 3, 2)));
+
+        return *this;
+    }
     Matrix4f<16> operator*(const Matrix4f<16>& rhs) const
     {
         Matrix4f<16> result{};
 
-        __m128 lhs_row_0 = _mm_load_ps(this->template GetColumnHead<0>());
-        __m128 lhs_row_1 = _mm_load_ps(this->template GetColumnHead<1>());
-        __m128 lhs_row_2 = _mm_load_ps(this->template GetColumnHead<2>());
-        __m128 lhs_row_3 = _mm_load_ps(this->template GetColumnHead<3>());
+        __m128 lhs_column_0 = _mm_load_ps(this->template GetColumnHead<0>());
+        __m128 lhs_column_1 = _mm_load_ps(this->template GetColumnHead<1>());
+        __m128 lhs_column_2 = _mm_load_ps(this->template GetColumnHead<2>());
+        __m128 lhs_column_3 = _mm_load_ps(this->template GetColumnHead<3>());
         //使用current_w作为缓存
         //手动循环展开，第一轮
         __m128 current_w = _mm_load_ps(rhs.GetColumnHead<0>());
@@ -640,10 +795,10 @@ public:
         __m128 current_y = SHUFFLE_SELF_PS(current_w, _MM_SHUFFLE(1, 1, 1, 1));
         __m128 current_z = SHUFFLE_SELF_PS(current_w, _MM_SHUFFLE(2, 2, 2, 2));
         current_w = SHUFFLE_SELF_PS(current_w, _MM_SHUFFLE(3, 3, 3, 3));
-        current_x = _mm_mul_ps(current_x, lhs_row_0);
-        current_y = _mm_mul_ps(current_y, lhs_row_1);
-        current_z = _mm_mul_ps(current_z, lhs_row_2);
-        current_w = _mm_mul_ps(current_w, lhs_row_3);
+        current_x = _mm_mul_ps(current_x, lhs_column_0);
+        current_y = _mm_mul_ps(current_y, lhs_column_1);
+        current_z = _mm_mul_ps(current_z, lhs_column_2);
+        current_w = _mm_mul_ps(current_w, lhs_column_3);
 
         current_x = _mm_add_ps(current_x, current_y);
         current_z = _mm_add_ps(current_z, current_w);
@@ -656,10 +811,10 @@ public:
         current_y = SHUFFLE_SELF_PS(current_w, _MM_SHUFFLE(1, 1, 1, 1));
         current_z = SHUFFLE_SELF_PS(current_w, _MM_SHUFFLE(2, 2, 2, 2));
         current_w = SHUFFLE_SELF_PS(current_w, _MM_SHUFFLE(3, 3, 3, 3));
-        current_x = _mm_mul_ps(current_x, lhs_row_0);
-        current_y = _mm_mul_ps(current_y, lhs_row_1);
-        current_z = _mm_mul_ps(current_z, lhs_row_2);
-        current_w = _mm_mul_ps(current_w, lhs_row_3);
+        current_x = _mm_mul_ps(current_x, lhs_column_0);
+        current_y = _mm_mul_ps(current_y, lhs_column_1);
+        current_z = _mm_mul_ps(current_z, lhs_column_2);
+        current_w = _mm_mul_ps(current_w, lhs_column_3);
 
         current_x = _mm_add_ps(current_x, current_y);
         current_z = _mm_add_ps(current_z, current_w);
@@ -671,10 +826,10 @@ public:
         current_y = SHUFFLE_SELF_PS(current_w, _MM_SHUFFLE(1, 1, 1, 1));
         current_z = SHUFFLE_SELF_PS(current_w, _MM_SHUFFLE(2, 2, 2, 2));
         current_w = SHUFFLE_SELF_PS(current_w, _MM_SHUFFLE(3, 3, 3, 3));
-        current_x = _mm_mul_ps(current_x, lhs_row_0);
-        current_y = _mm_mul_ps(current_y, lhs_row_1);
-        current_z = _mm_mul_ps(current_z, lhs_row_2);
-        current_w = _mm_mul_ps(current_w, lhs_row_3);
+        current_x = _mm_mul_ps(current_x, lhs_column_0);
+        current_y = _mm_mul_ps(current_y, lhs_column_1);
+        current_z = _mm_mul_ps(current_z, lhs_column_2);
+        current_w = _mm_mul_ps(current_w, lhs_column_3);
 
         current_x = _mm_add_ps(current_x, current_y);
         current_z = _mm_add_ps(current_z, current_w);
@@ -685,10 +840,10 @@ public:
         current_y = SHUFFLE_SELF_PS(current_w, _MM_SHUFFLE(1, 1, 1, 1));
         current_z = SHUFFLE_SELF_PS(current_w, _MM_SHUFFLE(2, 2, 2, 2));
         current_w = SHUFFLE_SELF_PS(current_w, _MM_SHUFFLE(3, 3, 3, 3));
-        current_x = _mm_mul_ps(current_x, lhs_row_0);
-        current_y = _mm_mul_ps(current_y, lhs_row_1);
-        current_z = _mm_mul_ps(current_z, lhs_row_2);
-        current_w = _mm_mul_ps(current_w, lhs_row_3);
+        current_x = _mm_mul_ps(current_x, lhs_column_0);
+        current_y = _mm_mul_ps(current_y, lhs_column_1);
+        current_z = _mm_mul_ps(current_z, lhs_column_2);
+        current_w = _mm_mul_ps(current_w, lhs_column_3);
 
         current_x = _mm_add_ps(current_x, current_y);
         current_z = _mm_add_ps(current_z, current_w);
@@ -696,6 +851,7 @@ public:
 
         return result;
     }
+    ENABLE_WHEN_ALIGNAS_1_ARGS(16)
     VectorType operator*(const VectorType& rhs) const
     {
         VectorType result{};

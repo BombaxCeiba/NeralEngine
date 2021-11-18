@@ -37,7 +37,7 @@ public:
         , const std::wstring& window_name, HINSTANCE app_instance, Event<std::function<EventState(const HWND hwnd)>> on_loaded_event = {});
     Window(const Window&) = delete;
     Window& operator=(const Window&) = delete;
-    ~Window() = default;
+    virtual ~Window() = default;
     void Show();
     void Hide();
     int32_t GetWidth() const;

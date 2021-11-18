@@ -72,19 +72,20 @@ template<typename... Args>
 class Event<std::function<EventState(Args...)>>
 {
 public:
+    using TokenTy = std::uint16_t;
     using FuncTy = std::function<EventState(Args...)>;
-    using FunctionList = std::list<std::pair<FuncTy,int32_t>>;
-    Event() :function_list_{} {}
+    using FunctionList = std::list<std::pair<FuncTy, TokenTy>>;
+    Event() :function_list_{}, current_token_(0) {}
     Event(const FuncTy default_function) :function_list_{}
     {
-        function_index = 0;
-        function_list_.push_back(std::make_pair(default_function, function_index));
+        current_token_ = 0;
+        function_list_.push_back(std::make_pair(default_function, current_token_));
     }
-    explicit Event(size_t function_count) :function_list_{ function_count }, function_index(0) {}
+    explicit Event(size_t function_count) :function_list_{ function_count }, current_token_(0) {}
     Event(const FuncTy default_function,const size_t function_count) :function_list_{ function_count }
     {
-        function_index = 0;
-        function_list_.push_back(std::make_pair(default_function, function_index));
+        current_token_ = 0;
+        function_list_.push_back(std::make_pair(default_function, current_token_));
     }
 
     ~Event() = default;
@@ -126,14 +127,14 @@ public:
         //    }
         //    rit++;
         //}
-    }
-    int32_t AddFunction(const FuncTy function)
+    }     
+    const TokenTy AddFunction(const FuncTy& function)
     {
-        function_index++;
-        function_list_.emplace_back(std::make_pair(function, function_index));
-        return function_index;
+        current_token_++;
+        function_list_.emplace_back(std::make_pair(function, current_token_));
+        return current_token_;
     }
-    void DeleteFunction(const size_t index)
+    void DeleteFunction(const TokenTy index)
     {
         for (auto it = function_list_.begin(); it != function_list_.end() ; it++)
         {
@@ -147,5 +148,26 @@ public:
 protected:
 private:
     FunctionList function_list_;
-    int32_t function_index;
+    TokenTy current_token_;
+};
+
+template<typename T>
+class EventFunctionGuard
+{
+public:
+    EventFunctionGuard(T& ref_event, const typename T::FuncTy& event_function)
+        :ref_related_event_{ ref_event }
+    {
+        token_ = ref_related_event_.AddFunction(event_function);
+    }
+    EventFunctionGuard() = delete;
+    EventFunctionGuard(const EventFunctionGuard&) = delete;
+    EventFunctionGuard& operator=(const EventFunctionGuard&) = delete;
+    ~EventFunctionGuard()
+    {
+        ref_related_event_.DeleteFunction(token_);
+    }
+private:
+    T& ref_related_event_;
+    typename T::TokenTy token_;
 };

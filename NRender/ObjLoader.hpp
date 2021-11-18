@@ -30,9 +30,9 @@ class MtlContent
 public:
     MtlContent() :Ns(0.0f), Ni(0.0f), d(0.0f), illum(0) {}
     MtlContent(
-        const Vector3fAlignasDefault& ka,
-        const Vector3fAlignasDefault& kd,
-        const Vector3fAlignasDefault& ks,
+        const Vector3fAlignas16& ka,
+        const Vector3fAlignas16& kd,
+        const Vector3fAlignas16& ks,
         const float ns,
         const float ni,
         const float d,
@@ -437,10 +437,6 @@ inline auto ObjLoader<Vec2f, Vec3f, align>::ReadMTL()->std::unordered_map<std::w
                 it->second(p_initializing_mtl, tokens);
             }
         }
-        return result;
     }
-    else
-    {
-        THROW_CUSTOM_EXCEPTION(MtlFileInvalid, "mtl file invalid");
-    }
+    return result;
 }
