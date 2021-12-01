@@ -3,6 +3,7 @@
 //Vectors.hpp by Dusk_NM02 (c) 2021 All Rights Reserved.
 //***************************************************************************************
 #include<cstddef>
+#include<cmath>
 #include<array>
 #include<emmintrin.h>
 #include<immintrin.h>
@@ -30,7 +31,7 @@ inline auto Numerical(Enum e) -> typename std::underlying_type<Enum>::type
 }
 
 template<typename __FromTy,typename __ToTy>
-struct change_type 
+struct change_type
 {
     using Type = __ToTy;
 };
@@ -256,8 +257,8 @@ public:
     static std::enable_if_t < (RHSSize > 2), RetTy > ToVector2(const VectorBase<RHSFigureTy, RHSSize, RHSAlign, RHS>& rhs_vec)
     {
         Vector2f result{
-            rhs_vec.Get<0>(),
-            rhs_vec.Get<1>(),
+            rhs_vec.template Get<0>(),
+            rhs_vec.template Get<1>(),
         };
         return result;
     }
@@ -271,23 +272,23 @@ public:
     using Base = VectorBase<float, 3, align, Vector3f<align>>;
     using FigureType = typename Base::Type;
     using Base::Base;
-    template<typename RHSFigureTy, typename RHS,size_t RHSSize, size_t RHSAlign,typename RetTy = Vector3f> 
+    template<typename RHSFigureTy, typename RHS,size_t RHSSize, size_t RHSAlign,typename RetTy = Vector3f>
     requires std::is_convertible_v<RHSFigureTy, float> && std::is_same_v<RetTy, Vector3f>
     static std::enable_if_t < (RHSSize > 3), RetTy > ToVector3(const VectorBase<RHSFigureTy, RHSSize, RHSAlign, RHS>& rhs_vec)
     {
         Vector3f result{
-            rhs_vec.Get<0>(),
-            rhs_vec.Get<1>(),
-            rhs_vec.Get<2>()
+            rhs_vec.template Get<0>(),
+            rhs_vec.template Get<1>(),
+            rhs_vec.template Get<2>()
         };
         return result;
     }
     template<size_t RHSAlign, typename RHS>
     Vector3f(const VectorBase<FigureType, 3, RHSAlign, RHS>& rhs_vec3)
     {
-        Base::numbers_[0] = rhs_vec3.Get<0>();
-        Base::numbers_[1] = rhs_vec3.Get<1>();
-        Base::numbers_[2] = rhs_vec3.Get<2>();
+        Base::numbers_[0] = rhs_vec3.template Get<0>();
+        Base::numbers_[1] = rhs_vec3.template Get<1>();
+        Base::numbers_[2] = rhs_vec3.template Get<2>();
     }
     /*Vector3f& operator+=(const Vector3f& rhs_vec)
     {
@@ -404,7 +405,7 @@ public:
         all_numbers = _mm_hadd_ps(all_numbers, all_numbers);
         Vector4f<align> result{};
         _mm_store_ps(result.GetHead(), all_numbers);
-        return std::sqrtf(result.x());
+        return std::sqrt(result.x());
     }
     ENABLE_WHEN_ALIGNAS_1_ARGS(16)
     void NormalizeSelf()
@@ -451,7 +452,7 @@ public:
     void HomogeneousDivisionSelf()
     {
         //FigureType w = this->w();
-        if (this->w() != 0) 
+        if (this->w() != 0)
         {
             __m128 source = _mm_load_ps(this->GetHead());
             __m128 divisor = SHUFFLE_SELF_PS(source, _MM_SHUFFLE(3, 3, 3, 3));//w
@@ -765,11 +766,11 @@ public:
     {
         __m128 c0 = _mm_load_ps(this->template GetColumnHead<0>());
         __m128 c1 = _mm_load_ps(this->template GetColumnHead<1>());
-        __m128 c01L = _mm_unpacklo_ps(c0, c1); 
-        __m128 c01H = _mm_unpackhi_ps(c0, c1); 
+        __m128 c01L = _mm_unpacklo_ps(c0, c1);
+        __m128 c01H = _mm_unpackhi_ps(c0, c1);
 
-        __m128 c2 = _mm_load_ps(this->template GetColumnHead<2>()); 
-        __m128 c3 = _mm_load_ps(this->template GetColumnHead<3>()); 
+        __m128 c2 = _mm_load_ps(this->template GetColumnHead<2>());
+        __m128 c3 = _mm_load_ps(this->template GetColumnHead<3>());
         __m128 c23L = _mm_unpacklo_ps(c2, c3);
         __m128 c23H = _mm_unpackhi_ps(c2, c3);
 

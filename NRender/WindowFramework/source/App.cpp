@@ -1,10 +1,24 @@
-#include "App.h"
+#include "../include/App.h"
 
 App App::instance{};
 
 App& App::GetInstance()
 {
     return instance;
+}
+
+void App::HideConsoleWindow()
+{
+    ::ShowWindow(::GetConsoleWindow(), SW_SHOW);
+}
+
+void App::EnableGDIPlus()
+{
+    if (gdiplus_token_ != 0)
+    {
+        Gdiplus::GdiplusStartupInput gdiplusStartupInput;
+        Gdiplus::GdiplusStartup(&gdiplus_token_, &gdiplusStartupInput, NULL);
+    }
 }
 
 void App::DeleteWindow(Window& window)
@@ -23,23 +37,23 @@ void App::DeleteWindow(Window& window)
 
     switch (quit_mode_)
     {
-    case App::QuitMode::WhenMainWindowClosed:
-        if (is_deleting_main_window)
-        {
-            PostQuitMessage(0);
-            return;
-        }
-        //当main_window_无可以匹配时（即没有正确配置main_window_的时候），为防止无法退出，检查是否已经是最后一个窗口
-        [[fallthrough]];
-    case App::QuitMode::WhenAllWindowClosed:
-        if (windows_.empty())
-        {
-            PostQuitMessage(0);
-            return;
-        }
-        break;
-    default:
-        break;
+        case App::QuitMode::WhenMainWindowClosed:
+            if (is_deleting_main_window)
+            {
+                PostQuitMessage(0);
+                return;
+            }
+            //当main_window_无可以匹配时（即没有正确配置main_window_的时候），为防止无法退出，检查是否已经是最后一个窗口
+            [[fallthrough]];
+        case App::QuitMode::WhenAllWindowClosed:
+            if (windows_.empty())
+            {
+                PostQuitMessage(0);
+                return;
+            }
+            break;
+        default:
+            break;
     }
 }
 
@@ -74,7 +88,6 @@ auto App::GetWindow(const std::wstring& window_name)const->const Window&
     return *(windows_.find(window_name)->second.get());
 }
 
-
 int32_t App::Run()
 {
     if (!windows_.empty())
@@ -91,10 +104,8 @@ int32_t App::Run()
     return -1;
 }
 
-App::App() : main_window_{0}
+App::App() : main_window_{ 0 }, gdiplus_token_{ 0 }
 {
-    Gdiplus::GdiplusStartupInput gdiplusStartupInput;
-    Gdiplus::GdiplusStartup(&gdiplus_token_, &gdiplusStartupInput, NULL);
 }
 
 App::~App()

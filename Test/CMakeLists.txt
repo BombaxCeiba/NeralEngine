@@ -1,0 +1,6 @@
+macro(create_test TEST_NAME)
+    add_executable(${TEST_NAME} "${TEST_NAME}.cpp")
+    add_test(NAME "${TEST_NAME}_CTest" COMMAND ${TEST_NAME})
+    message("create test:${TEST_NAME}")
+endmacro()
+set(CTEST_PARALLEL_LEVEL 6)

@@ -3,6 +3,7 @@
 //***************************************************************************************
 #pragma once
 #include <functional>
+#include <cstdint>
 #include <list>
 #include <Windows.h>
 
@@ -127,7 +128,7 @@ public:
         //    }
         //    rit++;
         //}
-    }     
+    }
     const TokenTy AddFunction(const FuncTy& function)
     {
         current_token_++;

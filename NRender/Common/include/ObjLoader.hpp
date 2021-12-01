@@ -41,7 +41,7 @@ public:
         const std::wstring& map_ks = {},
         const std::wstring& map_ns = {},
         const std::wstring& map_d = {},
-        const std::wstring& map_dump = {},
+        const std::wstring& map_bump = {},
         const int illum = 0
     ) :Ka{ ka }, Kd{ kd }, Ks{ ks }, Ns{ ns }, Ni{ ni }, d{ d }, map_Ka{ map_ka }, map_Kd{ map_kd }
         , map_Ns{ map_ns }, map_d{ map_d }, map_bump{ map_bump }, illum{ illum } {}

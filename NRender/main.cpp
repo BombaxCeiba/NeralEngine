@@ -2,16 +2,19 @@
 //main.cpp by Dusk_NM02 (c) 2021 All Rights Reserved.
 //***************************************************************************************
 #include <Windows.h>
-#include "Window.h"
+#include "WindowFramework/include/Window.h"
 #include "ObjLoader.hpp"
-#include "App.h"
-#include "SoftRender.h"
+#include "WindowFramework/include/App.h"
+#include "SoftRender/SoftRender.h"
 
-int WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nShowCmd)
+int main()
 {
 #if _DEBUG
+#if (MSC_VER)
     _CrtSetDbgFlag(_CrtSetDbgFlag(_CRTDBG_REPORT_FLAG) | _CRTDBG_LEAK_CHECK_DF);
 #endif
+#endif
+    auto hInstance = GetModuleHandle(NULL);
     auto up_main_window = std::make_unique<Window>(L"MainWindow", L"NRener", L"MainWindow", hInstance);
     auto up_soft_render = std::make_unique<SoftRender>(*(up_main_window.get()), Vector4fAlignas16{ 3, 4, 3 }, Vector4fAlignas16{ -2,-3,-3 }, Vector4fAlignas16{ 1,0,0 });
     auto& ref_soft_render = *(up_soft_render.get());

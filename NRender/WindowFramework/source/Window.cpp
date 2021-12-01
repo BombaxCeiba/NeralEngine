@@ -1,4 +1,4 @@
-#include"Window.h"
+#include"../include/Window.h"
 
 constexpr INT DefaultWidth = 1024;
 constexpr INT DefaultHeight = 768;
@@ -58,17 +58,17 @@ on_render_{ 0 }
         return;
     }
     hWnd_ = CreateWindow(
-        class_name.c_str(),        // name of window class 
-        window_title.c_str(),            // title-bar string 
-        WS_OVERLAPPEDWINDOW, // top-level window 
-        CW_USEDEFAULT,       // default horizontal position 
-        CW_USEDEFAULT,       // default vertical position 
-        DefaultWidth,       // default width 
-        DefaultHeight,       // default height 
-        static_cast<HWND>(NULL),         // no owner window 
-        static_cast<HMENU>(NULL),        // use class menu 
-        app_instance,           // handle to application instance 
-        this);      // no window-creation data 
+        class_name.c_str(),        // name of window class
+        window_title.c_str(),            // title-bar string
+        WS_OVERLAPPEDWINDOW, // top-level window
+        CW_USEDEFAULT,       // default horizontal position
+        CW_USEDEFAULT,       // default vertical position
+        DefaultWidth,       // default width
+        DefaultHeight,       // default height
+        static_cast<HWND>(NULL),         // no owner window
+        static_cast<HMENU>(NULL),        // use class menu
+        app_instance,           // handle to application instance
+        this);      // no window-creation data
     if (!hWnd_)
     {
         error_code_ = GetLastError();
@@ -136,8 +136,8 @@ LRESULT Window::CustomProcess(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
     }
     case WM_SIZE:
     {
-        SizeChangedEventArgs size_changed_event_args{ 
-            p_this->width_, p_this->height_, 
+        SizeChangedEventArgs size_changed_event_args{
+            p_this->width_, p_this->height_,
             LOWORD(lParam), HIWORD(lParam) };
         p_this->on_size_changed_.TriggerEvent(size_changed_event_args);
         break;

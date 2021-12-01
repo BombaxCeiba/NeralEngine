@@ -2,17 +2,12 @@
 //***************************************************************************************
 //Window.h by Dusk_NM02 (c) 2021 All Rights Reserved.
 //***************************************************************************************
-#include "Event.h"
-#include <Windows.h>
 #include <string>
 #include <functional>
-
-class RenderBase
-{
-public:
-    RenderBase() = default;
-    virtual ~RenderBase() = default;
-};
+#include <memory>
+#include <Windows.h>
+#include "Event.h"
+#include "RenderBase.h"
 
 class Window;
 

@@ -9,16 +9,14 @@
 #include <Gdiplus.h>
 
 #ifdef min
-    #undef min
+#undef min
 #endif
 #ifdef max
-    #undef max
+#undef max
 #endif
 
 #include "ObjLoader.hpp"
-#include "Window.h"
-
-#pragma comment(lib,"Gdiplus.lib")
+#include "../WindowFramework/include/Window.h"
 
 constexpr inline Gdiplus::PixelFormat g_softrender_bitmap_pixel_format = PixelFormat24bppRGB;
 
@@ -42,8 +40,8 @@ private:
     EventFunctionGuard<decltype(Window::on_size_changed_)> on_size_changed_event_guard_;
     Window& render_target_window_;
     Matrix4fAlignas16 PrecomputeMVPMatrix();
-    auto MVPAndViewportTransform(const std::array<Vector4fAlignas16, 3>& positions,const Matrix4fAlignas16& mvp_matrix)
-        ->std::tuple<std::array<Vector4fAlignas16, 3>,std::array<Vector3fAlignas16, 3>>;
+    auto MVPAndViewportTransform(const std::array<Vector4fAlignas16, 3>& positions, const Matrix4fAlignas16& mvp_matrix)
+        ->std::tuple<std::array<Vector4fAlignas16, 3>, std::array<Vector3fAlignas16, 3>>;
     void SetModelMatrix();
     void SetViewMatrix(const SoftRender::Camera& camera);
     void SetProjectionMatrix(const float z_near, const float z_far, const std::int32_t width, const std::int32_t height, const float fov_y_degree);
@@ -53,7 +51,7 @@ private:
     static Vector4fAlignas16 Interpolate3D(const Vector4fAlignas16& barycentric_args, const float weight, const std::array<Vector4fAlignas16, 3>& properties);
     static Vector3fAlignas16 Interpolate3D(const Vector4fAlignas16& barycentric_args, const float weight, const std::array<Vector3fAlignas16, 3>& properties);
     static bool IsPointInTriangle(const Vector4fAlignas16& barycentric_args);
-    static float InterpolateZ(const Vector4fAlignas16& barycentric_args,const std::array<Vector4fAlignas16, 3>& triangle_positions);
+    static float InterpolateZ(const Vector4fAlignas16& barycentric_args, const std::array<Vector4fAlignas16, 3>& triangle_positions);
     static ObjContentType::Vertex GetVertex(const Vector4fAlignas16& barycentric_args, const float x, const float y, const float z, const ObjContentType::TriangleVector::value_type& triangle);
     //stored by BGR
     struct ColorRGB24
@@ -71,7 +69,7 @@ private:
         Vector3fAlignas16 intensity_;
     };
 
-    void Set24bppRGBPixelColorUnsafe(void* scan0,size_t pixel_index,const ColorRGB24& color);
+    void Set24bppRGBPixelColorUnsafe(void* scan0, size_t pixel_index, const ColorRGB24& color);
     auto Get24bppRGBPixelColorUnsafe(void* scan0, size_t x, size_t y)->Vector3fAlignasDefault;
     class DepthBuffer {
     public:
@@ -98,7 +96,7 @@ public:
         model_matrix_{ Matrix4fAlignas16::IdentityMatrix() },
         view_matrix_{ Matrix4fAlignas16::IdentityMatrix() },
         projection_matrix_{ Matrix4fAlignas16::IdentityMatrix() },
-        depth_buffer_{ window,window.GetWidth(),window.GetHeight() },
+        depth_buffer_{ window,static_cast<size_t>(window.GetWidth()),static_cast<size_t>(window.GetHeight()) },
         on_render_event_guard_(window.on_render_, std::bind_front(&SoftRender::Rendering, this)),
         on_size_changed_event_guard_(window.on_size_changed_, std::bind_front(&SoftRender::OnWindowSizeChange, this))
     {

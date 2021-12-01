@@ -20,6 +20,8 @@ public:
         WhenExpelicitQuit
     };
     static App& GetInstance();
+    static void HideConsoleWindow();
+    void EnableGDIPlus();
     void DeleteWindow(Window& p_window);
     bool AddWindow(UniqueWindowPointer up_window);
     bool AddAsMainWindow(UniqueWindowPointer up_window);

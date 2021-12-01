@@ -3,11 +3,11 @@ Vector3fAlignasDefault SoftRender::DefaultShader(const ObjContentType::Vertex& v
 {
     //TODO:传入原始坐标数据进行着色
     //Vector3fAlignasDefault result_color = Vector3fAlignasDefault{ 1.0f,1.0f,1.0f };
-    static std::array<Light, 2> light_list{ 
+    static std::array<Light, 2> light_list{
         Light{{10, 10, 10}, {0, 122, 204}},
         Light{{-10, -10, -10}, {202, 81, 0}}
          };
-    
+
     constexpr float p = 150;
     Vector3fAlignasDefault result_color{};
     for (auto& light : light_list)
@@ -95,7 +95,7 @@ Vector2fAlignas16 SoftRender::Interpolate2D(const Vector4fAlignas16& barycentric
     m128_result = _mm_shuffle_ps(m128_result, m128_result, _MM_SHUFFLE(3, 1, 2, 0));
     m128_result = _mm_hadd_ps(m128_result, _mm_setzero_ps());
     __m128 tmp = _mm_set_ps(properties[2].x(), properties[2].y(), 0.0f, 0.0f);
-    tmp = _mm_mul_ps(tmp, 
+    tmp = _mm_mul_ps(tmp,
         _mm_shuffle_ps(m128_args, m128_args, _MM_SHUFFLE(2, 2, 2, 2)));
     m128_result = _mm_add_ps(tmp, m128_result);
     __m128 weight_4 = _mm_set_ps1(weight);
@@ -191,7 +191,7 @@ auto SoftRender::MVPAndViewportTransform(const std::array<Vector4fAlignas16, 3>&
         vec.HomogeneousDivisionSelf();
     }
     std::array<Vector3fAlignas16, 3> partial_result{};
-    std::transform(full_result.begin(), full_result.end(), partial_result.begin(), 
+    std::transform(full_result.begin(), full_result.end(), partial_result.begin(),
         [](auto&& item) { return Vector3fAlignas16::ToVector3(item); });
     for (auto& vec : full_result)
     {
@@ -322,16 +322,16 @@ EventState SoftRender::Rendering(const RenderEventArgs& event_args)
     if (render_target_picture_data.Scan0)
     {
         //memcpy(render_target_picture_data.Scan0, &background_color_, sizeof(background_color_));
-        memset(render_target_picture_data.Scan0, /*std::numeric_limits<int>::max()*/0, 
+        memset(render_target_picture_data.Scan0, /*std::numeric_limits<int>::max()*/0,
             static_cast<size_t>(render_target_picture_data.Width) * static_cast<size_t>(render_target_picture_data.Height) * sizeof(SoftRender::ColorRGB24));
     }
     else
     {
-        throw std::exception("Soft Render bitmap data pointer invalid");
+        throw std::runtime_error("Soft Render bitmap data pointer invalid");
     }
     //设置并计算MVP矩阵
     SetViewMatrix(camera_);
-    SetProjectionMatrix(0.1f, 50.0f, 
+    SetProjectionMatrix(0.1f, 50.0f,
         static_cast<INT>(depth_buffer_.GetWidth()), static_cast<INT>(depth_buffer_.GetHeight()));
     Matrix4fAlignas16 normal_matrix = (view_matrix_ * model_matrix_).InverseSelf().TransposeSelf();
     Matrix4fAlignas16 mvp_matrix = PrecomputeMVPMatrix();
@@ -459,8 +459,8 @@ EventState SoftRender::Rendering(const RenderEventArgs& event_args)
                     //ObjContentType::Vertex vertex_to_render{};
                     //if (use_single_sample)
                     //{
-                    //    Vector4fAlignas16 centre_barycentric_args{ 
-                    //        GetBarycentricArgs(Vector4fAlignas16{static_cast<float>(x) + 0.5f,static_cast<float>(y) + 0.5f}, 
+                    //    Vector4fAlignas16 centre_barycentric_args{
+                    //        GetBarycentricArgs(Vector4fAlignas16{static_cast<float>(x) + 0.5f,static_cast<float>(y) + 0.5f},
                     //        handeled_position) };
                     //    float average_z = 0;
                     //    for (auto& sample : msaa_samples)
@@ -468,7 +468,7 @@ EventState SoftRender::Rendering(const RenderEventArgs& event_args)
                     //        average_z += sample.z_;
                     //    }
                     //    average_z /= 4.0f;
-                    //    vertex_to_render = GetVertex(centre_barycentric_args, 
+                    //    vertex_to_render = GetVertex(centre_barycentric_args,
                     //        static_cast<float>(x), static_cast<float>(y), average_z, t);
                     //    average_color = DefaultShader(vertex_to_render, default_mtl, camera_.GetPosition());
                     //}
@@ -535,12 +535,12 @@ EventState SoftRender::OnWindowSizeChange(const SizeChangedEventArgs& event_args
     return EventState::Continue;
 }
 
-SoftRender::DepthBuffer::DepthBuffer(Window& target_window, size_t width, size_t height) 
+SoftRender::DepthBuffer::DepthBuffer(Window& target_window, size_t width, size_t height)
     :width_{ width }, height_{ height },
     size_change_event_guard_(target_window.on_size_changed_, [this](const SizeChangedEventArgs& event_args)->EventState {
         ResizeDepthBuffer(event_args.new_width_, event_args.new_height_);
         return EventState::Continue;
-    }) 
+    })
 {
     ResizeDepthBuffer(width, height);
 }
