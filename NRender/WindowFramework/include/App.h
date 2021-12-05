@@ -1,7 +1,12 @@
+/***
+ * @Author: Dusk
+ * @Date: 2021-09-06 13:59:48
+ * @LastEditTime: 2021-12-03 11:11:32
+ * @LastEditors: Dusk
+ * @FilePath: \NRender\NRender\WindowFramework\include\App.h
+ * @Copyright (c) 2021 Dusk. All rights reserved.
+ */
 #pragma once
-//***************************************************************************************
-//App.h by Dusk_NM02 (c) 2021 All Rights Reserved.
-//***************************************************************************************
 #include <memory>
 #include <unordered_map>
 #include <Windows.h>
@@ -20,6 +25,7 @@ public:
         WhenExpelicitQuit
     };
     static App& GetInstance();
+    static HINSTANCE GetHandle();
     static void HideConsoleWindow();
     void EnableGDIPlus();
     void DeleteWindow(Window& p_window);

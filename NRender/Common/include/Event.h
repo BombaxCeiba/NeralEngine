@@ -4,7 +4,9 @@
 #pragma once
 #include <functional>
 #include <cstdint>
-#include <list>
+#include <vector>
+#include <atomic>
+#include <memory>
 #include <Windows.h>
 
 enum class EventState
@@ -23,7 +25,7 @@ public:
 class SizeChangedEventArgs : public EventArgsBase
 {
 public:
-    SizeChangedEventArgs(uint32_t previous_width,uint32_t previous_height,uint32_t new_width,uint32_t new_height)
+    SizeChangedEventArgs(uint32_t previous_width, uint32_t previous_height, uint32_t new_width, uint32_t new_height)
         :previous_width_{ previous_width }, previous_height_{ previous_height },
         new_width_{ new_width }, new_height_{ new_height } {}
     ~SizeChangedEventArgs() = default;
@@ -41,31 +43,33 @@ public:
     const PAINTSTRUCT& paint_struct_;
 };
 
-template <typename T>
-class ReversionWrapper
+namespace dusk
 {
-public:
-    T& raw_data;
-};
+    namespace tools
+    {
+        template <typename T>
+        class ReversionWrapper
+        {
+        public:
+            T& raw_data;
+        };
 
-template <typename T>
-ReversionWrapper(T&)->ReversionWrapper<T>;
+        template <typename T>
+        auto begin(ReversionWrapper<T> rw) { return std::rbegin(rw.raw_data); }
 
-template <typename T>
-auto begin(ReversionWrapper<T> rw) { return std::rbegin(rw.raw_data); }
+        template <typename T>
+        auto end(ReversionWrapper<T> rw) { return std::rend(rw.raw_data); }
 
-template <typename T>
-auto end(ReversionWrapper<T> rw) { return std::rend(rw.raw_data); }
+        //template <typename T>
+        //auto cbegin(ReversionWrapper<T> rw) { return std::crbegin(rw.raw_data); }
+        //
+        //template <typename T>
+        //auto cend(ReversionWrapper<T> rw) { return std::crend(rw.raw_data); }
 
-//template <typename T>
-//auto cbegin(ReversionWrapper<T> rw) { return std::crbegin(rw.raw_data); }
-//
-//template <typename T>
-//auto cend(ReversionWrapper<T> rw) { return std::crend(rw.raw_data); }
-
-template <typename T>
-ReversionWrapper<T> reverse(T&& raw_data) { return { raw_data }; }
-
+        template <typename T>
+        ReversionWrapper<T> reverse(T&& raw_data) { return { raw_data }; }
+    }
+}
 template<typename Func>
 class Event;
 
@@ -75,100 +79,138 @@ class Event<std::function<EventState(Args...)>>
 public:
     using TokenTy = std::uint16_t;
     using FuncTy = std::function<EventState(Args...)>;
-    using FunctionList = std::list<std::pair<FuncTy, TokenTy>>;
-    Event() :function_list_{}, current_token_(0) {}
-    Event(const FuncTy default_function) :function_list_{}
+    using FunctionContainer = std::vector<std::pair<FuncTy, TokenTy>>;
+    class EventProxy
     {
-        current_token_ = 0;
-        function_list_.push_back(std::make_pair(default_function, current_token_));
-    }
-    explicit Event(size_t function_count) :function_list_{ function_count }, current_token_(0) {}
-    Event(const FuncTy default_function,const size_t function_count) :function_list_{ function_count }
-    {
-        current_token_ = 0;
-        function_list_.push_back(std::make_pair(default_function, current_token_));
-    }
-
-    ~Event() = default;
-    void TriggerEvent(Args... args)
-    {
-        for (auto func : function_list_)
+        //下面的inline都是玄学
+    public:
+        EventProxy() :function_container_{ 0 }, current_token_{ 0 }
         {
-            if (func.first)
+            function_container_.reserve(3);
+        }
+        EventProxy(const FuncTy default_function) :function_container_{ 0 }, current_token_{ 0 }
+        {
+            function_container_.reserve(3);
+            function_container_.push_back(std::make_pair(default_function, current_token_));
+        }
+        explicit EventProxy(size_t function_count) :function_container_{ 0 }, current_token_(0)
+        {
+            function_container_.reserve(function_count);
+        }
+        EventProxy(const FuncTy default_function, const size_t function_count) :function_container_{ 0 }, current_token_{ 0 }
+        {
+            function_container_.reserve(function_count);
+            function_container_.push_back(std::make_pair(default_function, current_token_));
+        }
+        ~EventProxy() = default;
+        inline void TriggerEvent(Args... args)
+        {
+            for (auto func : function_container_)
             {
-                if (func.first(std::forward<Args>(args)...) == EventState::End)
+                if (func.first)
                 {
+                    if (func.first(std::forward<Args>(args)...) == EventState::End)
+                        [[unlikely]]
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+        inline void TriggerEventReversely(Args... args)
+        {
+            for (auto func : dusk::tools::reverse(function_container_))
+            {
+                if (func.first)
+                {
+                    if (func.first(std::forward<Args>(args)...) == EventState::End)
+                        [[unlikely]]
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+        inline const TokenTy AddFunction(const FuncTy& function)
+        {
+            ++current_token_;
+            function_container_.emplace_back(std::make_pair(function, current_token_));
+            return current_token_;
+        }
+        inline void DeleteFunction(const TokenTy index)
+        {
+            for (auto it = function_container_.begin(); it != function_container_.end(); ++it)
+            {
+                if (it->second == index)
+                {
+                    function_container_.erase(it);
                     break;
                 }
             }
         }
+    private:
+        FunctionContainer function_container_;
+        TokenTy current_token_;
+    };
+    template<typename... Ts>
+    Event(Ts&&... ts) :proxy_instance_{ std::make_shared<EventProxy>(std::forward<Ts>(ts)...) } {}
+    ~Event() = default;
+
+    void TriggerEvent(Args... args)
+    {
+        proxy_instance_->TriggerEvent(std::forward<Args>(args)...);
     }
     void TriggerEventReversely(Args... args)
     {
-        for (auto func : ReversionWrapper{ function_list_ })
-        {
-            if (func.first)
-            {
-                if (func.first(std::forward<Args>(args)...) == EventState::End)
-                {
-                    break;
-                }
-            }
-        }
-        //auto rit = function_list_.rbegin();
-        //auto end = function_list_.rend();
-        //while (rit != end)
-        //{
-        //    if (rit.operator->()->first)
-        //    {
-        //        if (rit.operator->()->first(std::forward<Args>(args)...) == EventState::End)
-        //        {
-        //            break;
-        //        }
-        //    }
-        //    rit++;
-        //}
+        proxy_instance_->TriggerEventReversely(std::forward<Args>(args)...);
     }
-    const TokenTy AddFunction(const FuncTy& function)
+    const TokenTy AddFunction(const FuncTy & function)
     {
-        current_token_++;
-        function_list_.emplace_back(std::make_pair(function, current_token_));
-        return current_token_;
+        return proxy_instance_->AddFunction(std::forward<const FuncTy&>(function));
     }
     void DeleteFunction(const TokenTy index)
     {
-        for (auto it = function_list_.begin(); it != function_list_.end() ; it++)
-        {
-            if (it->second == index)
-            {
-                function_list_.erase(it);
-                break;
-            }
-        }
+        proxy_instance_->DeleteFunction(std::move(index));
     }
-protected:
+    std::weak_ptr<EventProxy> GetWeakPtr()const noexcept
+    {
+        return proxy_instance_;
+    }
 private:
-    FunctionList function_list_;
-    TokenTy current_token_;
+    std::shared_ptr<EventProxy> proxy_instance_;
 };
 
 template<typename T>
 class EventFunctionGuard
 {
+    using TokenTy = typename T::TokenTy;
 public:
     EventFunctionGuard(T& ref_event, const typename T::FuncTy& event_function)
-        :ref_related_event_{ ref_event }
+        :wp_related_event_{ std::move(ref_event.GetWeakPtr()) }
     {
-        token_ = ref_related_event_.AddFunction(event_function);
+        token_ = ref_event.AddFunction(event_function);
     }
-    EventFunctionGuard() = delete;
+    EventFunctionGuard(T& ref_event, const TokenTy token) :token_{ token }, wp_related_event_{ std::move(ref_event.GetWeakPtr()) }{}
+    EventFunctionGuard() = default;
     EventFunctionGuard(const EventFunctionGuard&) = delete;
     EventFunctionGuard& operator=(const EventFunctionGuard&) = delete;
     ~EventFunctionGuard()
     {
-        ref_related_event_.DeleteFunction(token_);
+        if (!wp_related_event_.expired())
+        {
+            wp_related_event_.lock()->DeleteFunction(token_);
+        }
+    }
+    void Reset(T& ref_event, const TokenTy token)
+    {
+        wp_related_event_ = ref_event.GetWeakPtr();
+        token_ = token;
     }
 private:
-    T& ref_related_event_;
-    typename T::TokenTy token_;
+    std::weak_ptr<typename T::EventProxy> wp_related_event_;
+    TokenTy token_;
 };
+#if __cplusplus >= 201703L
+template<typename T>
+EventFunctionGuard(T&, const typename T::FuncTy&)->EventFunctionGuard<T>;
+#endif

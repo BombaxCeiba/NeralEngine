@@ -1,40 +1,42 @@
+/***
+ * @Author: dusk
+ * @Date: 2021-11-30 20:42:26
+ * @FilePath: \NRender\NRender\Common\include\DXUtils.h
+ * @(c) 2021 dusk.
+ */
 #pragma once
 #include<string>
-#include<hash_map>
 #include<source_location>
 #include<wrl.h>
 
-namespace Dusk
+namespace dusk
 {
-    namespace Tools
+    namespace tools
     {
         class DXException :public std::exception
         {
         private:
-            const static std::hash_map<HRESULT, std::string> error_description_map_;
-            const std::source_location source_info_;
             const HRESULT error_;
             const static std::string before_error_;
             const static std::string after_error_;
-            const static std::string before_description_;
+            const static std::string after_line_;
+            const static std::string after_column_;
+            const static std::string after_file_name_;
+
+            const std::string full_text_;
         public:
-            DXException(HRESULT hCode, const std::source_location& source_info) :source_info_{ source_info } {};
-            const char* what() const noexcept override//C++11Æð
+            DXException(HRESULT hCode, const std::source_location& source_info);
+            const char* what() const noexcept override//C++11?
             {
-                return;
+                return full_text_.c_str();
             }
         };
-        inline void ThrowIfFailed(HRESULT hCode, const std::source_location source_info = std::source_location::current())
+        inline void ThrowIfFailed(HRESULT hCode, std::source_location source_info = std::source_location::current())
         {
             if (FAILED(hCode))
             {
-
+                throw DXException(hCode, source_info);
             }
         }
     }
-
-    //#if ((defined _DEBUG) || (defined DEBUG))
-    //#else
-    //
-    //#endif // DEBUG
 }

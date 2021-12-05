@@ -17,6 +17,13 @@ if(HAVE_SSE_SUPPORT MATCHES 0)
     message(FATAL_ERROR "SSE UNSUPPORT")
 endif()
 
+find_program(CCACHE_FOUND ccache)
+if(CCACHE_FOUND)
+    message("ccache find!")
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache) # Less useful to do it for linking, see edit2
+endif(CCACHE_FOUND)
+
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 # using Clang
     set(CMAKE_CXX_FLAGS "-march=native ${CMAKE_CXX_FLAGS}")
@@ -41,7 +48,40 @@ elseif(CMAKE_BUILD_TYPE MATCHES "Release" OR CMAKE_BUILD_TYPE MATCHES "RelWithDe
     add_definitions(-DNDEBUG)
 endif()
 
-add_subdirectory(NRender)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${PROJECT_SOURCE_DIR}/bin/debug)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_SOURCE_DIR}/bin/release)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${PROJECT_SOURCE_DIR}/lib/debug)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${PROJECT_SOURCE_DIR}/lib/release)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_DEBUG ${PROJECT_SOURCE_DIR}/bin/debug)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE ${PROJECT_SOURCE_DIR}/bin/release)
+
+include_directories(${PROJECT_SOURCE_DIR}/NRender/Common/include/)
+include_directories(${PROJECT_SOURCE_DIR}/NRender/)
+
+aux_source_directory(NRender/Common/source SOURCE_FILES)
+aux_source_directory(NRender/D3D12Render SOURCE_FILES)
+aux_source_directory(NRender/SoftRender SOURCE_FILES)
+aux_source_directory(NRender/WindowFramework/source SOURCE_FILES)
+message("Those files are now in project:\n ${SOURCE_FILES}")
+
+set(RELATIVE_LIBS "Gdiplus")
+List(APPEND RELATIVE_LIBS "d3d12")
+List(APPEND RELATIVE_LIBS "dxgi")
+List(APPEND RELATIVE_LIBS "d3dcompiler")
 
 enable_testing()
-add_subdirectory(Test)
+
+macro(create_test TEST_NAME)
+    add_executable(${TEST_NAME} "Test/${TEST_NAME}.cpp" ${SOURCE_FILES})
+    target_link_libraries(${TEST_NAME} PRIVATE ${RELATIVE_LIBS})
+    add_test(NAME "${TEST_NAME}_CTest" COMMAND ${TEST_NAME})
+    message("create test:${TEST_NAME}")
+endmacro()
+
+set(CTEST_PARALLEL_LEVEL 6)
+
+#create_test("D3D12Initialize")
+
+aux_source_directory(NRender SOURCE_FILES)
+add_executable(${PROJECT_NAME} ${SOURCE_FILES})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${RELATIVE_LIBS})

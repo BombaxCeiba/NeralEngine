@@ -24,6 +24,7 @@ class SoftRender :public RenderBase
 {
 public:
     class Camera;
+    EventFunctionGuard<decltype(Window::on_rendering_)> on_render_event_guard_;
 private:
     using ObjContentType = ObjContent<16>;
     //TODO:应当含有贴图的指针
@@ -36,7 +37,6 @@ private:
     Matrix4fAlignas16 model_matrix_;
     Matrix4fAlignas16 view_matrix_;
     Matrix4fAlignas16 projection_matrix_;
-    EventFunctionGuard<decltype(Window::on_render_)> on_render_event_guard_;
     EventFunctionGuard<decltype(Window::on_size_changed_)> on_size_changed_event_guard_;
     Window& render_target_window_;
     Matrix4fAlignas16 PrecomputeMVPMatrix();
@@ -97,7 +97,6 @@ public:
         view_matrix_{ Matrix4fAlignas16::IdentityMatrix() },
         projection_matrix_{ Matrix4fAlignas16::IdentityMatrix() },
         depth_buffer_{ window,static_cast<size_t>(window.GetWidth()),static_cast<size_t>(window.GetHeight()) },
-        on_render_event_guard_(window.on_render_, std::bind_front(&SoftRender::Rendering, this)),
         on_size_changed_event_guard_(window.on_size_changed_, std::bind_front(&SoftRender::OnWindowSizeChange, this))
     {
         up_render_picture_ = std::make_unique<Gdiplus::Bitmap>(window.GetWidth(), window.GetHeight(), g_softrender_bitmap_pixel_format);

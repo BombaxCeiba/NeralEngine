@@ -9,14 +9,19 @@ App& App::GetInstance()
 
 void App::HideConsoleWindow()
 {
-    ::ShowWindow(::GetConsoleWindow(), SW_SHOW);
+    ::ShowWindow(::GetConsoleWindow(), SW_HIDE);
+}
+
+HINSTANCE App::GetHandle()
+{
+    return ::GetModuleHandle(NULL);
 }
 
 void App::EnableGDIPlus()
 {
-    if (gdiplus_token_ != 0)
+    if (gdiplus_token_ == 0)
     {
-        Gdiplus::GdiplusStartupInput gdiplusStartupInput;
+        Gdiplus::GdiplusStartupInput gdiplusStartupInput{};
         Gdiplus::GdiplusStartup(&gdiplus_token_, &gdiplusStartupInput, NULL);
     }
 }

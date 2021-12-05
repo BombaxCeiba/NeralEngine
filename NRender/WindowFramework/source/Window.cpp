@@ -1,3 +1,9 @@
+/***
+ * @Author: Dusk
+ * @Date: 2021-09-04 14:00:56
+ * @FilePath: \NRender\NRender\WindowFramework\source\Window.cpp
+ * @Copyright (c) 2021 Dusk. All rights reserved.
+ */
 #include"../include/Window.h"
 
 constexpr INT DefaultWidth = 1024;
@@ -11,7 +17,7 @@ Window::Window(
     const std::string& class_name,
     const std::string& window_title
 #endif
-    , const std::wstring& window_name, HINSTANCE app_instance, Event<std::function<EventState(const HWND)>> on_loaded
+    , const std::wstring& window_name, HINSTANCE app_instance, std::function<EventState(const HWND)> on_loaded
 ) :error_code_(0), hWnd_(nullptr), width_(DefaultWidth), height_(DefaultHeight), state_(InitializationState::Success), name_(window_name),
 on_loaded_{ on_loaded },
 on_size_changed_{ [this](const SizeChangedEventArgs& size_changed_event_args)->EventState {
@@ -19,23 +25,23 @@ on_size_changed_{ [this](const SizeChangedEventArgs& size_changed_event_args)->E
     this->height_ = size_changed_event_args.new_height_;
     return EventState::Continue;
 } },
-on_closed_{ 1 },
+on_closed_{},
 on_closing_{ [this]()->EventState {
     //MessageBox(hWnd_,L"on_closing",L"",MB_OKCANCEL);
-    DestroyWindow(hWnd_);
+    ::DestroyWindow(hWnd_);
     hWnd_ = nullptr;
     return EventState::Continue;
 } },
 on_show_{ [](const HWND hWnd)->EventState {
-    ShowWindow(hWnd, SW_SHOW);
-    UpdateWindow(hWnd);
+    ::ShowWindow(hWnd, SW_SHOW);
+    ::UpdateWindow(hWnd);
     return EventState::Continue;
 } },
 on_hide_{ [](const HWND hWnd)->EventState {
-    ShowWindow(hWnd, SW_HIDE);
+    ::ShowWindow(hWnd, SW_HIDE);
     return EventState::Continue;
 } },
-on_render_{ 0 }
+on_rendering_{}
 {
     WNDCLASS window_class;
     //window_class.cbSize = sizeof(window_class);
@@ -50,14 +56,14 @@ on_render_{ 0 }
     window_class.hbrBackground = static_cast<HBRUSH>(GetStockObject(BLACK_BRUSH));
     window_class.lpszMenuName = NULL;
     window_class.lpszClassName = class_name.c_str();
-    ATOM regiset_result = RegisterClass(&window_class);
+    ATOM regiset_result = ::RegisterClass(&window_class);
     if (regiset_result == false)
     {
         error_code_ = GetLastError();
         state_ = InitializationState::Failure;
         return;
     }
-    hWnd_ = CreateWindow(
+    hWnd_ = ::CreateWindow(
         class_name.c_str(),        // name of window class
         window_title.c_str(),            // title-bar string
         WS_OVERLAPPEDWINDOW, // top-level window
@@ -74,7 +80,6 @@ on_render_{ 0 }
         error_code_ = GetLastError();
         state_ = InitializationState::Failure;
     }
-
 }
 
 void Window::Show()
@@ -95,12 +100,6 @@ int32_t Window::GetWidth() const
 int32_t Window::GetHeight() const
 {
     return height_;
-}
-
-void Window::SetRender(std::unique_ptr<RenderBase> up_render)
-{
-    up_render_.reset();
-    up_render_.swap(up_render);
 }
 
 HWND Window::GetHwnd()
@@ -125,35 +124,35 @@ LRESULT Window::CustomProcess(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
     auto* const p_this = reinterpret_cast<Window*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
     switch (uMsg)
     {
-    case WM_PAINT:
-    {
-        PAINTSTRUCT ps{};
-        BeginPaint(hwnd, &ps);
-        RenderEventArgs render_event_args{ ps };
-        p_this->on_render_.TriggerEvent(render_event_args);
-        EndPaint(hwnd, &ps);
-        break;
-    }
-    case WM_SIZE:
-    {
-        SizeChangedEventArgs size_changed_event_args{
-            p_this->width_, p_this->height_,
-            LOWORD(lParam), HIWORD(lParam) };
-        p_this->on_size_changed_.TriggerEvent(size_changed_event_args);
-        break;
-    }
-    case WM_CLOSE:
-        p_this->on_closing_.TriggerEventReversely();
-        if (p_this->hWnd_ == nullptr)
-        {
-            g_window_destructor(*p_this);
-        }
-        break;
-    case WM_NCDESTROY:
-        p_this->on_closed_.TriggerEventReversely();
-        break;
-    default:
-        return DefWindowProc(hwnd, uMsg, wParam, lParam);
+        case WM_PAINT:
+            {
+                PAINTSTRUCT ps{};
+                BeginPaint(hwnd, &ps);
+                RenderEventArgs render_event_args{ ps };
+                p_this->on_rendering_.TriggerEvent(render_event_args);
+                EndPaint(hwnd, &ps);
+                break;
+            }
+        case WM_SIZE:
+            {
+                SizeChangedEventArgs size_changed_event_args{
+                    p_this->width_, p_this->height_,
+                    LOWORD(lParam), HIWORD(lParam) };
+                p_this->on_size_changed_.TriggerEvent(size_changed_event_args);
+                break;
+            }
+        case WM_CLOSE:
+            p_this->on_closing_.TriggerEventReversely();
+            if (p_this->hWnd_ == nullptr)
+            {
+                g_window_destructor(*p_this);
+            }
+            break;
+        case WM_NCDESTROY:
+            p_this->on_closed_.TriggerEventReversely();
+            break;
+        default:
+            return DefWindowProc(hwnd, uMsg, wParam, lParam);
     }
     return 0;
 }

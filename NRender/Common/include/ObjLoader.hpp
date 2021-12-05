@@ -223,7 +223,8 @@ inline ObjLoader<Vec2f, Vec3f, align>::ObjLoader(StringTypes path) :obj_path_(pa
 template<typename Vec2f, typename Vec3f, size_t align>
 inline auto ObjLoader<Vec2f, Vec3f, align>::ReadOBJ()->ObjContent<align>
 {
-    std::locale::global(std::locale(""));
+    std::setlocale(LC_ALL, "C");
+    //std::locale::global(std::locale(""));
     std::wifstream obj_file{ std::visit(InitializeObjLoaderWifstream,obj_path_) };
     if (!obj_file.is_open())
     {
