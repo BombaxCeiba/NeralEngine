@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.15)
 
 set(PROJECT_NAME "NRender")
 
@@ -19,9 +19,9 @@ endif()
 
 find_program(CCACHE_FOUND ccache)
 if(CCACHE_FOUND)
-    message("ccache find!")
-    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
-    set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache) # Less useful to do it for linking, see edit2
+    message("enable ccache")
+    set(CMAKE_C_COMPILER_LAUNCHER ${CCACHE})
+    set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE})
 endif(CCACHE_FOUND)
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
@@ -44,16 +44,28 @@ if(CMAKE_BUILD_TYPE MATCHES "Debug")
     #if(MSVC)
         #set(CMAKE_CXX_FLAGS "/d1 reportSingleClassLayoutVector2f ${CMAKE_CXX_FLAGS}")
     #endif()
-elseif(CMAKE_BUILD_TYPE MATCHES "Release" OR CMAKE_BUILD_TYPE MATCHES "RelWithDebInfo")
+elseif(CMAKE_BUILD_TYPE MATCHES "Release" OR CMAKE_BUILD_TYPE MATCHES "RelWithDebInfo" OR CMAKE_BUILD_TYPE MATCHES "MinSizeRel")
     add_definitions(-DNDEBUG)
 endif()
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${PROJECT_SOURCE_DIR}/bin/debug)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_SOURCE_DIR}/bin/release)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${PROJECT_SOURCE_DIR}/lib/debug)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${PROJECT_SOURCE_DIR}/lib/release)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_DEBUG ${PROJECT_SOURCE_DIR}/bin/debug)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE ${PROJECT_SOURCE_DIR}/bin/release)
+set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+set(CMAKE_C_VISIBILITY_PRESET hidden)
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${PROJECT_SOURCE_DIR}/bin/Debug)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${PROJECT_SOURCE_DIR}/lib/Debug)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_DEBUG ${PROJECT_SOURCE_DIR}/bin/Debug)
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_SOURCE_DIR}/bin/Release)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${PROJECT_SOURCE_DIR}/lib/Release)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE ${PROJECT_SOURCE_DIR}/bin/Release)
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${PROJECT_SOURCE_DIR}/bin/RelWithDebInfo)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELWITHDEBINFO ${PROJECT_SOURCE_DIR}/lib/RelWithDebInfo)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELWITHDEBINFO ${PROJECT_SOURCE_DIR}/bin/RelWithDebInfo)
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL ${PROJECT_SOURCE_DIR}/bin/MinSizeRel)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_MINSIZEREL ${PROJECT_SOURCE_DIR}/lib/MinSizeRel)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_MINSIZEREL ${PROJECT_SOURCE_DIR}/bin/MinSizeRel)
 
 include_directories(${PROJECT_SOURCE_DIR}/NRender/Common/include/)
 include_directories(${PROJECT_SOURCE_DIR}/NRender/)
@@ -62,14 +74,12 @@ aux_source_directory(NRender/Common/source SOURCE_FILES)
 aux_source_directory(NRender/D3D12Render SOURCE_FILES)
 aux_source_directory(NRender/SoftRender SOURCE_FILES)
 aux_source_directory(NRender/WindowFramework/source SOURCE_FILES)
-message("Those files are now in project:\n ${SOURCE_FILES}")
+message("Those files are now in project:\n${SOURCE_FILES}")
 
 set(RELATIVE_LIBS "Gdiplus")
 List(APPEND RELATIVE_LIBS "d3d12")
 List(APPEND RELATIVE_LIBS "dxgi")
 List(APPEND RELATIVE_LIBS "d3dcompiler")
-
-enable_testing()
 
 macro(create_test TEST_NAME)
     add_executable(${TEST_NAME} "Test/${TEST_NAME}.cpp" ${SOURCE_FILES})
@@ -78,9 +88,7 @@ macro(create_test TEST_NAME)
     message("create test:${TEST_NAME}")
 endmacro()
 
-set(CTEST_PARALLEL_LEVEL 6)
-
-#create_test("D3D12Initialize")
+add_subdirectory(Test)
 
 aux_source_directory(NRender SOURCE_FILES)
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})

@@ -7,7 +7,7 @@
 #pragma once
 #include<string>
 #include<source_location>
-#include<wrl.h>
+#include<wrl/client.h>
 
 namespace dusk
 {

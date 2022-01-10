@@ -10,7 +10,8 @@
 #include<wrl/client.h>
 #include<dxgi1_4.h>
 #include<d3d12.h>
-#include<directxmath.h>
+#include<sal.h>
+#include<DirectXMath.h>
 #include"DXUtils.h"
 #include"RenderBase.h"
 #include"WindowFramework/include/Window.h"
@@ -33,6 +34,7 @@ private:
     Microsoft::WRL::ComPtr<IDXGISwapChain> swap_chain_;
     Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> rtv_heap_;
     Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> dsv_heap_;
+    Microsoft::WRL::ComPtr<ID3D12PipelineState> pipeline_state_;
     DXGI_FORMAT back_buffer_format_;
     bool use_msaa4x_;
     UINT msaa4x_quality_level_;
@@ -48,6 +50,8 @@ public:
 private:
     void Initialize(Window& target_window);
     void InitializeSwapChain();
+    void HandleIfDeviceLost(const HRESULT hr);
+    void OnDeviceLost(const HRESULT error_type);
     void LoadAssets();
     //必须先重置命令列表分配器和命令列表本身，然后才能重复使用它们。 在更高级的方案中，可能有效的做法是每隔几个帧就重置分配器。 内存与执行命令列表后无法立即释放的分配器相关联。 此示例演示如何在完成每一帧后重置分配器。
     void ResetCommandList();
