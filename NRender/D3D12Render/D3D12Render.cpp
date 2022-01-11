@@ -74,7 +74,7 @@ void D3D12Render::LoadAssets()
 
 D3D12Render::D3D12Render(Window& window)
     : back_buffer_format_{DXGI_FORMAT_R8G8B8A8_UNORM}, use_msaa4x_{true}, msaa4x_quality_level_{0},
-      on_resize_event_guard_{window.on_size_changed_, [this](const SizeChangedEventArgs& e) -> EventState
+      on_resize_event_guard_{window.on_size_changed_, [this](const ceiba::SizeChangedEventArgs& e) -> ceiba::EventState
                              { return this->OnResize(e); }}
 {
     Initialize(window);
@@ -181,7 +181,7 @@ void D3D12Render::OnDeviceLost(const HRESULT error_type)
 }
 //现在，对当前帧重复使用命令列表。 将视区重新附加到命令列表（必须在每次重置命令列表之后、执行命令之前完成），指示资源将用作渲染器目标，记录命令，然后指示在执行完命令列表后，将使用渲染器目标来呈现信息。
 
-EventState D3D12Render::OnResize(const SizeChangedEventArgs& event_args)
+ceiba::EventState D3D12Render::OnResize(const ceiba::SizeChangedEventArgs& event_args)
 {
     // If the swap chain already exists, resize it.
     HRESULT hr = swap_chain_->ResizeBuffers(
@@ -191,13 +191,13 @@ EventState D3D12Render::OnResize(const SizeChangedEventArgs& event_args)
         DXGI_FORMAT_B8G8R8A8_UNORM,
         0);
     HandleIfDeviceLost(hr);
-    return EventState::Continue;
+    return ceiba::EventState::Continue;
 }
 
-EventState D3D12Render::OnRending(const RenderEventArgs& event_args)
+ceiba::EventState D3D12Render::OnRending(const ceiba::RenderEventArgs& event_args)
 {
     HRESULT present_hr = swap_chain_->Present(1, 0); //呈现帧
     //command_list_->ClearRenderTargetView();
     HandleIfDeviceLost(present_hr);
-    return EventState::Continue;
+    return ceiba::EventState::Continue;
 }

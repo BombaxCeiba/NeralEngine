@@ -19,7 +19,7 @@
 class D3D12Render :public RenderBase
 {
 public:
-    EventFunctionGuard<decltype(Window::on_rendering_)> on_rendering_event_guard_;
+    ceiba::EventFunctionGuard<decltype(Window::on_rendering_)> on_rendering_event_guard_;
 
 private:
     Microsoft::WRL::ComPtr<IDXGIFactory4> dxgi_factory_;
@@ -38,7 +38,8 @@ private:
     DXGI_FORMAT back_buffer_format_;
     bool use_msaa4x_;
     UINT msaa4x_quality_level_;
-    EventFunctionGuard<decltype(Window::on_size_changed_)> on_resize_event_guard_;
+    ceiba::EventFunctionGuard<decltype(Window::on_size_changed_)> on_resize_event_guard_;
+
 public:
     D3D12Render() = delete;
     D3D12Render(Window& window);
@@ -46,7 +47,8 @@ public:
     void PrintAdapters();
     void PrintAdapterOutputs(Microsoft::WRL::ComPtr<IDXGIAdapter> adapter, const std::wstring & retract = L"");
     void PrintOutputDisplayModes(Microsoft::WRL::ComPtr<IDXGIOutput> output, DXGI_FORMAT format, const std::wstring & retract = L"");
-    EventState OnRending(const RenderEventArgs&);
+    ceiba::EventState OnRending(const ceiba::RenderEventArgs&);
+
 private:
     void Initialize(Window& target_window);
     void InitializeSwapChain();
@@ -57,5 +59,5 @@ private:
     void ResetCommandList();
     //对于大多数应用而言，等待帧完成的做法过于低效。
     void WaitForPreviousFrameRending();
-    EventState OnResize(const SizeChangedEventArgs& event_args);
+    ceiba::EventState OnResize(const ceiba::SizeChangedEventArgs& event_args);
 };

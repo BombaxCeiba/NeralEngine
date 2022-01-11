@@ -309,11 +309,11 @@ void SoftRender::SetObjContent(const ObjContentType& p_obj_content)
     p_obj_content_ = &p_obj_content;
 }
 
-EventState SoftRender::Rendering(const RenderEventArgs& event_args)
+ceiba::EventState SoftRender::Rendering(const ceiba::RenderEventArgs& event_args)
 {
     if (!p_obj_content_)
     {
-        return EventState::Continue;
+        return ceiba::EventState::Continue;
     }
     Gdiplus::Rect rect_to_lock{ 0,0,static_cast<INT>(depth_buffer_.GetWidth()),static_cast<INT>(depth_buffer_.GetHeight()) };
     Gdiplus::BitmapData render_target_picture_data{};
@@ -524,23 +524,24 @@ EventState SoftRender::Rendering(const RenderEventArgs& event_args)
     up_graphics->DrawImage(up_render_picture_.get(),
         0, 0);
     depth_buffer_.ResetDepthBuffer();
-    return EventState::Continue;
+    return ceiba::EventState::Continue;
 }
 
-EventState SoftRender::OnWindowSizeChange(const SizeChangedEventArgs& event_args)
+ceiba::EventState SoftRender::OnWindowSizeChange(const ceiba::SizeChangedEventArgs& event_args)
 {
     up_render_picture_.reset();
     auto tmp_up = std::make_unique<Gdiplus::Bitmap>(event_args.new_width_, event_args.new_height_, g_softrender_bitmap_pixel_format);
     up_render_picture_.swap(tmp_up);
-    return EventState::Continue;
+    return ceiba::EventState::Continue;
 }
 
 SoftRender::DepthBuffer::DepthBuffer(Window& target_window, size_t width, size_t height)
-    :width_{ width }, height_{ height },
-    size_change_event_guard_(target_window.on_size_changed_, [this](const SizeChangedEventArgs& event_args)->EventState {
-        ResizeDepthBuffer(event_args.new_width_, event_args.new_height_);
-        return EventState::Continue;
-    })
+    : width_{width}, height_{height},
+      size_change_event_guard_(target_window.on_size_changed_, [this](const ceiba::SizeChangedEventArgs& event_args) -> ceiba::EventState
+                               {
+                                   ResizeDepthBuffer(event_args.new_width_, event_args.new_height_);
+                                   return ceiba::EventState::Continue;
+                               })
 {
     ResizeDepthBuffer(width, height);
 }

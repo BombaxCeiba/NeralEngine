@@ -84,7 +84,8 @@ namespace dusk
     }
     template <typename Type, typename Outputer, typename StringType1, typename StringType2 = StringType1,
               typename = typename std::enable_if<
-                  std::is_base_of<dusk::OutputerBase, Type>::value && std::is_base_of<dusk::LogTypeBase, Outputer>::value>::type>
+                  std::is_base_of<
+                      ::dusk::OutputerBase, Outputer>::value>::type>
     inline void Log(StringType1&& content, StringType2&& end_string = '\n')
     {
         static_assert(dusk::OutputerBase::CheckOutputMethodExist<Outputer>::value, "You should override function Print(...) which in class OutputerBase!");

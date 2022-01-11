@@ -32,11 +32,11 @@ int main()
     auto sp_d3d12_render = std::make_shared<D3D12Render>(*up_main_window);
     {
         auto* const p_render = sp_soft_render.get();
-        sp_soft_render->on_render_event_guard_.Reset(up_main_window->on_rendering_, up_main_window->SetRender(sp_soft_render, [p_render](const RenderEventArgs& e) -> EventState
+        sp_soft_render->on_render_event_guard_.Reset(up_main_window->on_rendering_, up_main_window->SetRender(sp_soft_render, [p_render](const ceiba::RenderEventArgs& e) -> ceiba::EventState
                                                                                                               { return p_render->Rendering(e); }));
     }
     auto& ref_soft_render = *(sp_soft_render.get());
-    ObjLoader obj_loader{"D:\\Sources\\CPP\\GAMES101\\Assignment3\\Code\\out\\build\\models\\spot\\spot_triangulated_good.obj"};
+    ObjLoader obj_loader{"D:\\Sources\\CPP\\GAMES101\\Assignment3\\Code\\models\\spot\\spot_triangulated_good.obj"};
     auto obj_content = obj_loader.ReadOBJ();
     ref_soft_render.SetObjContent(obj_content);
     App::GetInstance().AddAsMainWindow(std::move(up_main_window));

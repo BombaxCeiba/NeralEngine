@@ -36,14 +36,4 @@ namespace dusk
     {
         return Length;
     }
-
-    template <typename Result, typename StaticString, typename Tag>
-    struct Asserter;
-    template <typename Result, typename StaticString>
-    struct Asserter<Result, StaticString, typename std::enable_if<std::is_same<decltype(Result::value), bool>::value>::type>
-    {
-        constexpr static bool value = Result::value;
-        constexpr operator bool() const { return value; }
-        static_assert(Result::value);
-    };
 }
