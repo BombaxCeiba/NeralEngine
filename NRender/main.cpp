@@ -28,7 +28,7 @@ int main()
     App::HideConsoleWindow();
 #endif
     auto up_main_window = std::make_unique<Window>(L"MainWindow", L"NRener", L"MainWindow", hInstance);
-    auto sp_soft_render = std::make_shared<SoftRender>(*(up_main_window.get()), Vector4fAlignas16{3, 4, 3}, Vector4fAlignas16{-2, -3, -3}, Vector4fAlignas16{1, 0, 0});
+    auto sp_soft_render = std::make_shared<SoftRender>(*(up_main_window.get()), Vector4fAlignas16{3, 4, 3}, Vector4fAlignas16{0, 0, 0}, Vector4fAlignas16{1, 0, 0});
     auto sp_d3d12_render = std::make_shared<D3D12Render>(*up_main_window);
     {
         auto* const p_render = sp_soft_render.get();

@@ -112,6 +112,11 @@ HWND Window::GetHwnd()
     return hWnd_;
 }
 
+void Window::Update()
+{
+    ::RedrawWindow(hWnd_, nullptr, nullptr, RDW_INVALIDATE | RDW_INVALIDATE);
+}
+
 LRESULT Window::FunctionForInitialization(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     if (uMsg == WM_NCCREATE)
@@ -136,6 +141,12 @@ LRESULT Window::CustomProcess(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam
         ceiba::RenderEventArgs render_event_args{ps};
         p_this->on_rendering_.TriggerEvent(render_event_args);
         EndPaint(hwnd, &ps);
+        break;
+    }
+    case WM_KEYDOWN:
+    {
+        ceiba::KeyEventArgs key_event_args{wParam, lParam};
+        p_this->on_key_down_.TriggerEvent(key_event_args);
         break;
     }
     case WM_SIZE:

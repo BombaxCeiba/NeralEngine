@@ -8,7 +8,7 @@
 #include <vector>
 #include <atomic>
 #include <memory>
-#include <Windows.h>
+#include <winuser.h>
 
 namespace ceiba
 {
@@ -51,17 +51,28 @@ namespace ceiba
         const PAINTSTRUCT& paint_struct_;
     };
 
+    class KeyEventArgs final : public EventArgsBase
+    {
+    public:
+        KeyEventArgs(WPARAM wParam, LPARAM lParam)
+            : virtual_key_code_{LOWORD(wParam)}, repat_count_{LOWORD(lParam)},
+              is_alt_down_{(HIWORD(lParam) & KF_ALTDOWN) == KF_ALTDOWN} {}
+        WORD virtual_key_code_;
+        WORD repat_count_;
+        bool is_alt_down_;
+    };
+
     class MouseEventArgs : public EventArgsBase
     {
     public:
-        enum class Key
+        enum class Button
         {
             LeftButton = 1,
             RightButton = 2,
             MiddleButton = 4
         };
-        Key pressed_key_;
-        ::ceiba::Point2i32 Location;
+        Button pressed_button_;
+        Point2i32 Location;
     };
 
     template <typename T>
@@ -72,21 +83,35 @@ namespace ceiba
     };
 
     template <typename T>
-    auto begin(ReversionWrapper<T> rw) { return std::rbegin(rw.raw_data); }
-
-    template <typename T>
-    auto end(ReversionWrapper<T> rw) { return std::rend(rw.raw_data); }
-
-#if (__cplusplus >= 201402L)
-    template <typename T>
-    auto cbegin(ReversionWrapper<T> rw)
+    auto begin(ReversionWrapper<T> rw) noexcept(noexcept(rw.raw_data.rbegin()))
+        -> decltype(rw.raw_data.rbegin())
     {
-        return std::crbegin(rw.raw_data);
+        return rw.raw_data.rbegin();
     }
 
     template <typename T>
-    auto cend(ReversionWrapper<T> rw) { return std::crend(rw.raw_data); }
+    auto end(ReversionWrapper<T> rw) noexcept(noexcept(rw.raw_data.rend()))
+        -> decltype(rw.raw_data.rend())
+    {
+        return rw.raw_data.rend();
+    }
+
+#if (__cplusplus >= 201402L)
+    template <typename T>
+    auto cbegin(ReversionWrapper<T> rw) noexcept(noexcept(rw.raw_data.crbegin()))
+        -> decltype(rw.raw_data.crbegin())
+    {
+        return rw.raw_data.crbegin();
+    }
+
+    template <typename T>
+    auto cend(ReversionWrapper<T> rw) noexcept(noexcept(rw.raw_data.crend()))
+        -> decltype(rw.raw_data.cend())
+    {
+        return rw.raw_data.crend();
+    }
 #endif
+
     template <typename T>
     ReversionWrapper<T> reverse(T&& raw_data)
     {
@@ -127,7 +152,7 @@ namespace ceiba
             ~EventProxy() = default;
             inline void TriggerEvent(Args... args)
             {
-                for (auto func : function_container_)
+                for (auto&& func : function_container_)
                 {
                     if (func.first)
                     {
@@ -141,7 +166,7 @@ namespace ceiba
             }
             inline void TriggerEventReversely(Args... args)
             {
-                for (auto func : reverse(function_container_))
+                for (auto&& func : reverse(function_container_))
                 {
                     if (func.first)
                     {
@@ -241,8 +266,8 @@ namespace ceiba
     EventFunctionGuard(T&, const typename T::FuncTy&) -> EventFunctionGuard<T>;
 #endif
 
-template<typename... Args>
-using make_event = Event<std::function<EventState(Args...)>>;
+    template <typename... Args>
+    using make_event = Event<std::function<EventState(Args...)>>;
 
 }
 namespace WindowFramework = ceiba;

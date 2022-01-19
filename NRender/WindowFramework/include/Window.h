@@ -34,6 +34,8 @@ public:
     ceiba::make_event<const HWND> on_show_;
     ceiba::make_event<const HWND> on_hide_;
     ceiba::make_event<const ::ceiba::MouseEventArgs&> on_mouse_move_;
+    ceiba::make_event<> on_key_up_;
+    ceiba::make_event<const ::ceiba::KeyEventArgs&> on_key_down_;
     ceiba::make_event<const ::ceiba::SizeChangedEventArgs&> on_size_changed_;
 
     const std::wstring name_;
@@ -55,6 +57,7 @@ public:
     void Hide();
     int32_t GetWidth() const;
     int32_t GetHeight() const;
+    void Update();
     template <typename RenderImpl, typename = typename std::enable_if<
                                        std::is_base_of<RenderBase, RenderImpl>::value && !std::is_same<RenderBase, RenderImpl>::value>::type>
     auto SetRender(std::shared_ptr<RenderImpl> sp_render, const typename decltype(on_rendering_)::Type& rendering)

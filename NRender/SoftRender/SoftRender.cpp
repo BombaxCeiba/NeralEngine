@@ -1,15 +1,30 @@
-#include"SoftRender.h"
+#include "SoftRender.h"
+
+SoftRender::SoftRender(Window& window, const Vector4fAlignas16& position, const Vector4fAlignas16& gaze_direction, const Vector4fAlignas16& up_direction)
+    : render_target_window_{window}, render_target_flag{false},
+      camera_{position, gaze_direction, up_direction, window},
+      model_matrix_{Matrix4fAlignas16::IdentityMatrix()},
+      view_matrix_{Matrix4fAlignas16::IdentityMatrix()},
+      projection_matrix_{Matrix4fAlignas16::IdentityMatrix()},
+      depth_buffer_{window, static_cast<size_t>(window.GetWidth()), static_cast<size_t>(window.GetHeight())},
+      on_size_changed_event_guard_(window.on_size_changed_, std::bind_front(&SoftRender::OnWindowSizeChange, this))
+{
+    up_render_picture_ = std::make_unique<Gdiplus::Bitmap>(window.GetWidth(), window.GetHeight(), g_softrender_bitmap_pixel_format);
+    background_color_.r_ = 1;
+    background_color_.g_ = 1;
+    background_color_.b_ = 1;
+}
+
 Vector3fAlignasDefault SoftRender::DefaultShader(const ObjContentType::Vertex& vertex, const MtlContent& mtl, const Vector4fAlignas16& camera_position, const Vector3fAlignas16& view_position)
 {
     //TODO:传入原始坐标数据进行着色
     //Vector3fAlignasDefault result_color = Vector3fAlignasDefault{ 1.0f,1.0f,1.0f };
     static std::array<Light, 2> light_list{
-        Light{{10, 10, 10}, {0, 122, 204}},
-        Light{{-10, -10, -10}, {202, 81, 0}}
-         };
+        Light{{20, 20, 20}, {0, 122, 204}},
+        Light{{-20, -20, -20}, {202, 81, 0}}};
 
     constexpr float p = 150;
-    Vector3fAlignasDefault result_color{};
+    Vector3fAlignasDefault result_color{0};
     for (auto& light : light_list)
     {
         // 光的方向
@@ -33,6 +48,13 @@ Vector3fAlignasDefault SoftRender::DefaultShader(const ObjContentType::Vertex& v
         result_color += La + Ld + Ls;
     }
     return result_color;
+}
+
+Vector3fAlignasDefault SoftRender::DepthVisualizer(const ObjContentType::Vertex& vertex, const MtlContent& mtl, const Vector4fAlignas16& camera_position, const Vector3fAlignas16& view_position)
+{
+    float depth = vertex.position.z() + 1.0f;
+    depth /= 2.0f;
+    return {depth, depth, depth};
 }
 
 Vector4fAlignas16 SoftRender::GetBarycentricArgs(const Vector4fAlignas16& target_position, const std::array<Vector4fAlignas16, 3>& triangle_positions)
@@ -91,12 +113,12 @@ Vector2fAlignas16 SoftRender::Interpolate2D(const Vector4fAlignas16& barycentric
     __m128 m128_args = _mm_load_ps(barycentric_args.GetHead());
     __m128 m128_result = _mm_load_ps(properties[0].GetHead());
     m128_result = _mm_mul_ps(m128_result,
-        _mm_shuffle_ps(m128_args, m128_args, _MM_SHUFFLE(1, 1, 0, 0)));
+                             _mm_shuffle_ps(m128_args, m128_args, _MM_SHUFFLE(1, 1, 0, 0)));
     m128_result = _mm_shuffle_ps(m128_result, m128_result, _MM_SHUFFLE(3, 1, 2, 0));
     m128_result = _mm_hadd_ps(m128_result, _mm_setzero_ps());
     __m128 tmp = _mm_set_ps(properties[2].x(), properties[2].y(), 0.0f, 0.0f);
     tmp = _mm_mul_ps(tmp,
-        _mm_shuffle_ps(m128_args, m128_args, _MM_SHUFFLE(2, 2, 2, 2)));
+                     _mm_shuffle_ps(m128_args, m128_args, _MM_SHUFFLE(2, 2, 2, 2)));
     m128_result = _mm_add_ps(tmp, m128_result);
     __m128 weight_4 = _mm_set_ps1(weight);
     m128_result = _mm_div_ps(m128_result, weight_4);
@@ -123,9 +145,7 @@ Vector4fAlignas16 SoftRender::Interpolate3D(const Vector4fAlignas16& barycentric
 Vector3fAlignas16 SoftRender::Interpolate3D(const Vector4fAlignas16& barycentric_args, const float weight, const std::array<Vector3fAlignas16, 3>& properties)
 {
     Vector3fAlignas16 result =
-        properties[0] * barycentric_args.x()
-        + properties[1] * barycentric_args.y()
-        + properties[2] * barycentric_args.z();
+        properties[0] * barycentric_args.x() + properties[1] * barycentric_args.y() + properties[2] * barycentric_args.z();
     return result;
 }
 
@@ -143,47 +163,37 @@ bool SoftRender::IsPointInTriangle(const Vector4fAlignas16& barycentric_args)
     //    return true;
     //}
     //return false;
-    return (barycentric_args.x() > 0 && barycentric_args.x() < 1)
-        && (barycentric_args.y() > 0 && barycentric_args.y() < 1)
-        && (barycentric_args.z() > 0 && barycentric_args.z() < 1);
+    return (barycentric_args.x() > 0 && barycentric_args.x() < 1) && (barycentric_args.y() > 0 && barycentric_args.y() < 1) && (barycentric_args.z() > 0 && barycentric_args.z() < 1);
 }
 
 float SoftRender::InterpolateZ(const Vector4fAlignas16& barycentric_args, const std::array<Vector4fAlignas16, 3>& triangle_positions)
 {
-    float z = 1.0f / (
-        barycentric_args.x() / triangle_positions[0].w()
-        + barycentric_args.y() / triangle_positions[1].w()
-        + barycentric_args.z() / triangle_positions[2].w());
-    float z_position =
-        barycentric_args.x() * triangle_positions[0].z() / triangle_positions[0].w()
-        + barycentric_args.y() * triangle_positions[1].z() / triangle_positions[1].w()
-        + barycentric_args.z() * triangle_positions[2].z() / triangle_positions[2].w();
+    float z = 1.0f / (barycentric_args.x() / triangle_positions[0].w() + barycentric_args.y() / triangle_positions[1].w() + barycentric_args.z() / triangle_positions[2].w());
+    float z_position = barycentric_args.x() * triangle_positions[0].z() / triangle_positions[0].w() + barycentric_args.y() * triangle_positions[1].z() / triangle_positions[1].w() + barycentric_args.z() * triangle_positions[2].z() / triangle_positions[2].w();
     z_position *= z;
     return z_position;
 }
 
-SoftRender::ObjContentType::Vertex SoftRender::GetVertex(const Vector4fAlignas16& barycentric_args, const float x, const float y, const float z, const ObjContentType::TriangleVector::value_type& triangle)
+SoftRender::ObjContentType::Vertex SoftRender::GetVertex(const Vector4fAlignas16& barycentric_args, const float x, const float y, const float depth, const ObjContentType::TriangleVector::value_type& triangle)
 {
     ObjContentType::Vertex result{
-        .position = decltype(result.position){x,y,z},
-        .texture_uv = Interpolate2D(barycentric_args,1.0f,triangle.texture_uv),
-        .normal = Interpolate3D(barycentric_args,1.0f,triangle.normal),
-        .color = Interpolate3D(barycentric_args,1.0f,triangle.color),
+        .position = decltype(result.position){x, y, depth},
+        .texture_uv = Interpolate2D(barycentric_args, 1.0f, triangle.texture_uv),
+        .normal = Interpolate3D(barycentric_args, 1.0f, triangle.normal),
+        .color = Interpolate3D(barycentric_args, 1.0f, triangle.color),
     };
     return result;
 }
 
 auto SoftRender::MVPAndViewportTransform(const std::array<Vector4fAlignas16, 3>& positions, const Matrix4fAlignas16& mvp_matrix)
-->std::tuple<std::array<Vector4fAlignas16, 3>, std::array<Vector3fAlignas16, 3>>
+    -> std::tuple<std::array<Vector4fAlignas16, 3>, std::array<Vector3fAlignas16, 3>>
 {
     //MVP transform
     std::array<Vector4fAlignas16, 3> full_result{
-        mvp_matrix* positions[0],
-        mvp_matrix* positions[1],
-        mvp_matrix* positions[2] };
+        mvp_matrix * positions[0],
+        mvp_matrix * positions[1],
+        mvp_matrix * positions[2]};
     //Homogeneous division and viewport transform
-    //constexpr float f1 = static_cast<float>(50 - 0.1) / 2.0f;
-    //constexpr float f2 = static_cast<float>(50 + 0.1) / 2.0f;
     auto width = static_cast<float>(depth_buffer_.GetWidth());
     auto height = static_cast<float>(depth_buffer_.GetHeight());
     for (auto& vec : full_result)
@@ -192,11 +202,16 @@ auto SoftRender::MVPAndViewportTransform(const std::array<Vector4fAlignas16, 3>&
     }
     std::array<Vector3fAlignas16, 3> partial_result{};
     std::transform(full_result.begin(), full_result.end(), partial_result.begin(),
-        [](auto&& item) { return Vector3fAlignas16::ToVector3(item); });
+                   [](auto&& item)
+                   { return Vector3fAlignas16::ToVector3(item); });
+    //viewport transform
     for (auto& vec : full_result)
     {
         vec.SetX(0.5f * width * (vec.x() + 1.0f));
         vec.SetY(0.5f * height * (vec.y() + 1.0f));
+        constexpr static float C = 1.0f;
+        //vec.SetW((2.0f * std::log(C * vec.w() + 1.0f) / std::log(C * 100.0f + 1.0f) - 1.0f) * vec.w());
+        //vec.SetW(std::log(C * vec.w() + 1.0f) / std::log(C * 100.0f + 1) * vec.w());
     }
     return std::make_tuple(full_result, partial_result);
 }
@@ -208,19 +223,18 @@ Matrix4fAlignas16 SoftRender::PrecomputeMVPMatrix()
 
 void SoftRender::SetViewMatrix(const SoftRender::Camera& camera)
 {
-    Matrix4fAlignas16 t_view_matrix = { Matrix4fAlignas16::IdentityMatrix() };
+    Matrix4fAlignas16 t_view_matrix = {Matrix4fAlignas16::IdentityMatrix()};
     __m128 zero = _mm_setzero_ps();
     _mm_stream_ps(t_view_matrix.GetColumnHead<3>(), _mm_sub_ps(
-        zero,
-        _mm_load_ps(camera.GetPosition().GetHead())
-        ));
+                                                        zero,
+                                                        _mm_load_ps(camera.GetPosition().GetHead())));
     t_view_matrix[3][3] = 1.0f;
 
     auto gaze_tmp = camera.GetPosition() - camera.GetGazePosition();
     gaze_tmp.NormalizeSelf();
-    __m128 gaze_vector = _mm_load_ps(gaze_tmp.GetHead());//g
-    __m128 up_vector = _mm_load_ps(camera.GetUpDirection().GetHead());//t
-    __m128 gaze_cross_up = Vector4fAlignas16::Cross3(gaze_vector, up_vector);//gxt
+    __m128 gaze_vector = _mm_load_ps(gaze_tmp.GetHead());                     //g
+    __m128 up_vector = _mm_load_ps(camera.GetUpDirection().GetHead());        //t
+    __m128 gaze_cross_up = Vector4fAlignas16::Cross3(gaze_vector, up_vector); //gxt
     __m128 gxt_t_low = _mm_unpacklo_ps(gaze_cross_up, up_vector);
     __m128 gxt_t_heigh = _mm_unpackhi_ps(gaze_cross_up, up_vector);
     gaze_vector = _mm_sub_ps(zero, gaze_vector);
@@ -229,7 +243,7 @@ void SoftRender::SetViewMatrix(const SoftRender::Camera& camera)
     Matrix4fAlignas16 r_view_matrix{};
     _mm_store_ps(r_view_matrix.GetColumnHead<0>(), _mm_shuffle_ps(gxt_t_low, g_zero_low, _MM_SHUFFLE(1, 0, 1, 0)));
     _mm_store_ps(r_view_matrix.GetColumnHead<1>(), _mm_shuffle_ps(gxt_t_low, g_zero_low, _MM_SHUFFLE(3, 2, 3, 2)));
-    _mm_store_ps(r_view_matrix.GetColumnHead<2>(), _mm_shuffle_ps(gxt_t_heigh, g_zero_heigh, _MM_SHUFFLE(1, 0, 1, 0)) );
+    _mm_store_ps(r_view_matrix.GetColumnHead<2>(), _mm_shuffle_ps(gxt_t_heigh, g_zero_heigh, _MM_SHUFFLE(1, 0, 1, 0)));
     r_view_matrix[3][3] = 1.0f;
     view_matrix_ = r_view_matrix * t_view_matrix;
 }
@@ -248,8 +262,7 @@ void SoftRender::SetProjectionMatrix(const float z_near, const float z_far, cons
         -(cot_half_theta / aspect_ratio), 0, 0, 0,
         0, -cot_half_theta, 0, 0,
         0, 0, (z_near + z_far) / (z_near - z_far), -(2.0f * z_near * z_far) / (z_near - z_far),
-        0, 0, 1.0f, 0
-    };
+        0, 0, 1.0f, 0};
 }
 
 void SoftRender::Set24bppRGBPixelColorUnsafe(void* scan0, size_t pixel_index, const ColorRGB24& color)
@@ -267,12 +280,67 @@ auto SoftRender::Get24bppRGBPixelColorUnsafe(void* scan0, size_t x, size_t y) ->
     return Vector3fAlignasDefault{
         color.r_ / 255.0f,
         color.g_ / 255.0f,
-        color.b_ / 255.0f
-    };
+        color.b_ / 255.0f};
 }
 
-SoftRender::Camera::Camera(const Vector4fAlignas16& position, const Vector4fAlignas16& gaze_direction, const Vector4fAlignas16& up_direction)
-    :camera_{ position,gaze_direction,up_direction.Normalize() } {}
+SoftRender::Camera::Camera(
+    const Vector4fAlignas16& position,
+    const Vector4fAlignas16& gaze_direction,
+    const Vector4fAlignas16& up_direction,
+    Window& window)
+    : camera_{position, gaze_direction, up_direction.Normalize()}, ref_window_{window},
+      on_key_down_event_guard_{window.on_key_down_, [this](const ceiba::KeyEventArgs& event_args) -> ceiba::EventState
+                               { return this->KeyDownEventHandler(event_args); }}
+{
+}
+
+ceiba::EventState SoftRender::Camera::KeyDownEventHandler(const ceiba::KeyEventArgs& event_args)
+{
+    float tmp;
+    switch (event_args.virtual_key_code_)
+    {
+    case 0x57: //W Pressed
+    {
+        MoveWS([](float lhs, float rhs)
+               { return lhs - rhs; });
+        break;
+    }
+    case 0x41: //A Pressed
+    {
+        MoveAD([](float lhs, float rhs)
+               { return lhs - rhs; });
+        break;
+    }
+    case 0x44: //D Pressed
+    {
+        MoveAD([](float lhs, float rhs)
+               { return lhs + rhs; });
+        break;
+    }
+    case 0x53: //S Pressed
+    {
+        MoveWS([](float lhs, float rhs)
+               { return lhs + rhs; });
+        break;
+    }
+    case 0x45: //E Pressed
+    {
+        MoveQE([](float lhs, float rhs)
+               { return lhs + rhs; });
+        break;
+    }
+    case 0x51: //Q Pressed
+    {
+        MoveQE([](float lhs, float rhs)
+               { return lhs - rhs; });
+        break;
+    }
+    default:
+        break;
+    }
+    ref_window_.Update();
+    return ceiba::EventState::Continue;
+}
 
 const Vector4fAlignas16& SoftRender::Camera::GetPosition() const
 {
@@ -315,15 +383,15 @@ ceiba::EventState SoftRender::Rendering(const ceiba::RenderEventArgs& event_args
     {
         return ceiba::EventState::Continue;
     }
-    Gdiplus::Rect rect_to_lock{ 0,0,static_cast<INT>(depth_buffer_.GetWidth()),static_cast<INT>(depth_buffer_.GetHeight()) };
+    Gdiplus::Rect rect_to_lock{0, 0, static_cast<INT>(depth_buffer_.GetWidth()), static_cast<INT>(depth_buffer_.GetHeight())};
     Gdiplus::BitmapData render_target_picture_data{};
     up_render_picture_->LockBits(&rect_to_lock, Gdiplus::ImageLockModeWrite, g_softrender_bitmap_pixel_format, &render_target_picture_data);
     //重置背景为黑色
     if (render_target_picture_data.Scan0)
     {
         //memcpy(render_target_picture_data.Scan0, &background_color_, sizeof(background_color_));
-        memset(render_target_picture_data.Scan0, /*std::numeric_limits<int>::max()*/0,
-            static_cast<size_t>(render_target_picture_data.Width) * static_cast<size_t>(render_target_picture_data.Height) * sizeof(SoftRender::ColorRGB24));
+        memset(render_target_picture_data.Scan0, /*std::numeric_limits<int>::max()*/ 0,
+               static_cast<size_t>(render_target_picture_data.Width) * static_cast<size_t>(render_target_picture_data.Height) * sizeof(SoftRender::ColorRGB24));
     }
     else
     {
@@ -331,30 +399,29 @@ ceiba::EventState SoftRender::Rendering(const ceiba::RenderEventArgs& event_args
     }
     //设置并计算MVP矩阵
     SetViewMatrix(camera_);
-    SetProjectionMatrix(0.1f, 50.0f,
-        static_cast<INT>(depth_buffer_.GetWidth()), static_cast<INT>(depth_buffer_.GetHeight()));
+    SetProjectionMatrix(1.0f, 10.0f,
+                        static_cast<INT>(depth_buffer_.GetWidth()), static_cast<INT>(depth_buffer_.GetHeight()));
     Matrix4fAlignas16 normal_matrix = (view_matrix_ * model_matrix_).InverseSelf().TransposeSelf();
     Matrix4fAlignas16 mvp_matrix = PrecomputeMVPMatrix();
     std::array<Vector4fAlignas16, 3> handeled_normal;
     //检查文件是否定义了材质
-    if (!p_obj_content_->mtl_range_.empty())//文件定义了材质
+    if (!p_obj_content_->mtl_range_.empty()) //文件定义了材质
     {
-
     }
-    else//文件未定义材质，使用默认材质
+    else //文件未定义材质，使用默认材质
     {
         auto& mtls_in_obj = p_obj_content_->mtls_;
         static MtlContent tmp_mtl{
-            {0.0004f, 0.0004f, 0.0004f}/*Ka*/,{1.0f,1.0f,1.0f}/*Kd*/,{0.2f,0.2f,0.2f}/*Ks*/,
-            10.0f,//Ns
-            1.0f,//Ni
-            1.0f//d
+            {0.0004f, 0.0004f, 0.0004f} /*Ka*/, {1.0f, 1.0f, 1.0f} /*Kd*/, {0.2f, 0.2f, 0.2f} /*Ks*/,
+            10.0f, //Ns
+            1.0f,  //Ni
+            1.0f   //d
         };
         auto& default_mtl = /*!mtls_in_obj.empty() ? mtls_in_obj.begin()->second :*/ tmp_mtl;
         for (auto& t : p_obj_content_->triangles)
         {
             //获得MVP变换后的坐标
-            auto [handeled_position,mvp_position] = MVPAndViewportTransform(t.position, mvp_matrix);
+            auto [handeled_position, mvp_position] = MVPAndViewportTransform(t.position, mvp_matrix);
             for (size_t i = 0; i < 3; i++)
             {
                 handeled_normal[i] = normal_matrix * Vector4fAlignas16(t.normal[i], HomogeneousType::Vector);
@@ -450,7 +517,7 @@ ceiba::EventState SoftRender::Rendering(const ceiba::RenderEventArgs& event_args
                     //    msaa_samples[3].z_test_result_ = depth_buffer_.TryToSetDepth(x, y, 3, z);
                     //}
 
-                    Vector3fAlignasDefault average_color{ 0.0f,0.0f,0.0f };
+                    Vector3fAlignasDefault average_color{0.0f, 0.0f, 0.0f};
                     //bool use_single_sample = true;
                     //for (auto& sample : msaa_samples)//MSAA四个采样点均有效则使用中间的点进行计算
                     //{
@@ -497,32 +564,30 @@ ceiba::EventState SoftRender::Rendering(const ceiba::RenderEventArgs& event_args
                     float centre_x = static_cast<float>(x) + 0.5f;
                     float centre_y = static_cast<float>(y) + 0.5f;
                     Vector4fAlignas16 centre_barycentric_args{
-                        GetBarycentricArgs(Vector4fAlignas16{centre_x,centre_y,1.0f},handeled_position) };
+                        GetBarycentricArgs(Vector4fAlignas16{centre_x, centre_y, 1.0f}, handeled_position)};
                     if (IsPointInTriangle(centre_barycentric_args))
                     {
-                        float z = InterpolateZ(centre_barycentric_args, handeled_position);
-                        if (depth_buffer_.TryToSetDepth(x, y, 0, z))
+                        float depth = InterpolateZ(centre_barycentric_args, handeled_position);
+                        if (depth_buffer_.TryToSetDepth(x, y, 0, depth))
                         {
                             auto vertex_to_render = GetVertex(centre_barycentric_args,
-                                centre_x, centre_y, z, t);
+                                                              centre_x, centre_y, depth, t);
                             vertex_to_render.normal = Vector3fAlignas16::ToVector3(Interpolate3D(centre_barycentric_args, 1.0f, handeled_normal));
                             auto interpolated_view_position = Interpolate3D(centre_barycentric_args, 1.0f, mvp_position);
-                            average_color = DefaultShader(vertex_to_render, default_mtl, camera_.GetPosition(), interpolated_view_position);
+                            average_color = DepthVisualizer(vertex_to_render, default_mtl, camera_.GetPosition(), interpolated_view_position);
                             ColorRGB24 color_to_draw(average_color);
                             size_t color_index = (x + (y * depth_buffer_.GetWidth())) * sizeof(ColorRGB24);
                             Set24bppRGBPixelColorUnsafe(render_target_picture_data.Scan0, color_index, color_to_draw);
-
                         }
                     }
-
                 }
             }
         }
     }
     up_render_picture_->UnlockBits(&render_target_picture_data);
-    std::unique_ptr<Gdiplus::Graphics> up_graphics{ Gdiplus::Graphics::FromHDC(event_args.paint_struct_.hdc)};
+    std::unique_ptr<Gdiplus::Graphics> up_graphics{Gdiplus::Graphics::FromHDC(event_args.paint_struct_.hdc)};
     up_graphics->DrawImage(up_render_picture_.get(),
-        0, 0);
+                           0, 0);
     depth_buffer_.ResetDepthBuffer();
     return ceiba::EventState::Continue;
 }
@@ -537,7 +602,8 @@ ceiba::EventState SoftRender::OnWindowSizeChange(const ceiba::SizeChangedEventAr
 
 SoftRender::DepthBuffer::DepthBuffer(Window& target_window, size_t width, size_t height)
     : width_{width}, height_{height},
-      size_change_event_guard_(target_window.on_size_changed_, [this](const ceiba::SizeChangedEventArgs& event_args) -> ceiba::EventState
+      size_change_event_guard_(target_window.on_size_changed_,
+                               [this](const ceiba::SizeChangedEventArgs& event_args) -> ceiba::EventState
                                {
                                    ResizeDepthBuffer(event_args.new_width_, event_args.new_height_);
                                    return ceiba::EventState::Continue;
@@ -548,7 +614,7 @@ SoftRender::DepthBuffer::DepthBuffer(Window& target_window, size_t width, size_t
 
 void SoftRender::DepthBuffer::ResizeDepthBuffer(size_t width, size_t height)
 {
-    size_t new_size = width * height * 4;//use MSAA 4x
+    size_t new_size = width * height * 4; //use MSAA 4x
     auto now = std::chrono::steady_clock::now();
     if (new_size > depth_buffer_.size())
     {
@@ -596,19 +662,28 @@ bool SoftRender::DepthBuffer::TryToSetDepth(size_t x, size_t y, size_t sample_in
 
 decltype(SoftRender::DepthBuffer::default_depth_) SoftRender::DepthBuffer::default_depth_ = -1.0f * std::numeric_limits<float>::infinity();
 
-SoftRender::ColorRGB24::ColorRGB24(const Vector3fAlignasDefault& float_color)
+SoftRender::ColorRGB24::ColorRGB24(Vector3fAlignasDefault float_color)
 {
-    auto tmp = static_cast<std::uint16_t>(float_color.x() * 255.0f);
-    r_ = LimitNumber(tmp);
-    tmp = static_cast<std::uint16_t>(float_color.y() * 255.0f);
-    g_ = LimitNumber(tmp);
-    tmp = static_cast<std::uint16_t>(float_color.z() * 255.0f);
-    b_ = LimitNumber(tmp);
+    for (auto&& number : float_color)
+    {
+        if (number > 1.0f)
+        {
+            number = 1.f;
+        }
+        else if (number < 0.0f)
+        {
+            number = 0.0f;
+        }
+    }
+
+    r_ = static_cast<std::uint8_t>(float_color.x() * 255.0f);
+    g_ = static_cast<std::uint8_t>(float_color.y() * 255.0f);
+    b_ = static_cast<std::uint8_t>(float_color.z() * 255.0f);
 }
 
-std::uint8_t SoftRender::ColorRGB24::LimitNumber(std::uint16_t number)
+std::uint8_t SoftRender::ColorRGB24::LimitNumber(std::uint32_t number)
 {
-    std::uint16_t tmp = std::min(number, static_cast<std::uint16_t>(255));
-    tmp = std::max(tmp, static_cast<std::uint16_t>(0));
+    std::uint32_t tmp = std::min(number, static_cast<std::uint32_t>(255));
+    tmp = std::max(tmp, static_cast<std::uint32_t>(0));
     return static_cast<std::uint8_t>(tmp);
 }

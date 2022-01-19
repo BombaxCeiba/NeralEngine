@@ -8,7 +8,7 @@ macro(create_gtest TEST_NAME)
     endif()
     gtest_discover_tests(${TEST_NAME})
     add_dependencies(BuildAndTest ${TEST_NAME})
-    message("create gtest:${TEST_NAME} --succeeded")
+    message("----create gtest:${TEST_NAME} --succeeded")
 endmacro()
 
 find_package(GTest REQUIRED)

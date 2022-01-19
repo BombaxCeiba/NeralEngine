@@ -34,6 +34,7 @@ private:
     //TODO:应当含有贴图的指针
     using SoftShaderType = std::function<Vector3fAlignasDefault(const ObjContentType::Vertex&, const MtlContent&, const Vector4fAlignas16&, const Vector3fAlignas16&)>;
     static Vector3fAlignasDefault DefaultShader(const ObjContentType::Vertex& vertex, const MtlContent& mtl, const Vector4fAlignas16& camera_position, const Vector3fAlignas16& view_position);
+    static Vector3fAlignasDefault DepthVisualizer(const ObjContentType::Vertex& vertex, const MtlContent& mtl, const Vector4fAlignas16& camera_position, const Vector3fAlignas16& view_position);
     SoftShaderType custom_shader_;
     bool render_target_flag;
     std::unique_ptr<Gdiplus::Bitmap> up_render_picture_;
@@ -42,7 +43,6 @@ private:
     Matrix4fAlignas16 view_matrix_;
     Matrix4fAlignas16 projection_matrix_;
     ceiba::EventFunctionGuard<decltype(Window::on_size_changed_)> on_size_changed_event_guard_;
-    //EventFunctionGuard<decltype(Window::o)>
     Window& render_target_window_;
     Matrix4fAlignas16 PrecomputeMVPMatrix();
     auto MVPAndViewportTransform(const std::array<Vector4fAlignas16, 3>& positions, const Matrix4fAlignas16& mvp_matrix)
@@ -62,8 +62,8 @@ private:
     struct ColorRGB24
     {
         ColorRGB24() = default;
-        ColorRGB24(const Vector3fAlignasDefault& float_color);
-        std::uint8_t LimitNumber(std::uint16_t number);
+        ColorRGB24(Vector3fAlignasDefault float_color);
+        std::uint8_t LimitNumber(std::uint32_t number);
         std::uint8_t b_;
         std::uint8_t g_;
         std::uint8_t r_;
@@ -99,20 +99,7 @@ private:
     } depth_buffer_;
 
 public:
-    SoftRender(Window& window, const Vector4fAlignas16& position, const Vector4fAlignas16& gaze_direction, const Vector4fAlignas16& up_direction)
-        : render_target_window_{window}, render_target_flag{false},
-          camera_{position, gaze_direction, up_direction},
-          model_matrix_{Matrix4fAlignas16::IdentityMatrix()},
-          view_matrix_{Matrix4fAlignas16::IdentityMatrix()},
-          projection_matrix_{Matrix4fAlignas16::IdentityMatrix()},
-          depth_buffer_{window, static_cast<size_t>(window.GetWidth()), static_cast<size_t>(window.GetHeight())},
-          on_size_changed_event_guard_(window.on_size_changed_, std::bind_front(&SoftRender::OnWindowSizeChange, this))
-    {
-        up_render_picture_ = std::make_unique<Gdiplus::Bitmap>(window.GetWidth(), window.GetHeight(), g_softrender_bitmap_pixel_format);
-        background_color_.r_ = 1;
-        background_color_.g_ = 1;
-        background_color_.b_ = 1;
-    }
+    SoftRender(Window& window, const Vector4fAlignas16& position, const Vector4fAlignas16& gaze_direction, const Vector4fAlignas16& up_direction);
     ~SoftRender() = default;
     void SetObjContent(const ObjContentType& p_obj_content);
     //省略了Model变换
@@ -122,7 +109,7 @@ public:
     class Camera
     {
     public:
-        Camera(const Vector4fAlignas16& position, const Vector4fAlignas16& gaze_direction, const Vector4fAlignas16& up_direction);
+        Camera(const Vector4fAlignas16& position, const Vector4fAlignas16& gaze_direction, const Vector4fAlignas16& up_direction, Window& window);
         ~Camera() = default;
         const Vector4fAlignas16& GetPosition() const;
         const Vector4fAlignas16& GetGazePosition() const;
@@ -132,6 +119,8 @@ public:
         void SetUpDirection(const Vector4fAlignas16& up_direction);
 
     private:
+        ceiba::EventState KeyDownEventHandler(const ceiba::KeyEventArgs& event_args);
+
         enum class DataType : size_t
         {
             Position = 0,
@@ -139,5 +128,24 @@ public:
             UpDirection = 2
         };
         std::array<Vector4fAlignas16, 3> camera_;
+        Window& ref_window_;
+        ceiba::EventFunctionGuard<decltype(Window::on_key_down_)> on_key_down_event_guard_;
+        constexpr static float move_rato = 0.1f;
+
+        template <typename ALU>
+        void MoveWS(ALU alu)
+        {
+            camera_[Numerical(DataType::Position)].SetX(alu(camera_[Numerical(DataType::Position)].x(), move_rato));
+        }
+        template <typename ALU>
+        void MoveAD(ALU alu)
+        {
+            camera_[Numerical(DataType::Position)].SetY(alu(camera_[Numerical(DataType::Position)].y(), move_rato));
+        }
+        template <typename ALU>
+        void MoveQE(ALU alu)
+        {
+            camera_[Numerical(DataType::Position)].SetZ(alu(camera_[Numerical(DataType::Position)].z(), move_rato));
+        }
     } camera_;
 };
