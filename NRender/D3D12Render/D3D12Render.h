@@ -52,6 +52,8 @@ public:
 private:
     void Initialize(Window& target_window);
     void InitializeSwapChain();
+    void CreateSwapChain();
+
     void HandleIfDeviceLost(const HRESULT hr);
     void OnDeviceLost(const HRESULT error_type);
     void LoadAssets();

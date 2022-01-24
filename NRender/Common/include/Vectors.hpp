@@ -40,8 +40,8 @@ using change_type_t = typename change_type<__FromTy, __ToTy>::Type;
 
 enum class HomogeneousType
 {
-    Vector,
-    Point
+    Vector = 0,
+    Point = 1
 };
 
 //对于下面的结构体，使用C++17及其以上的标准保证不需要使用自定义std::allocator分配对齐内存

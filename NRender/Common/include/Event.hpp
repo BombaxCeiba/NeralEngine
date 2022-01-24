@@ -62,16 +62,16 @@ namespace ceiba
         bool is_alt_down_;
     };
 
+    enum class MouseButton
+    {
+        LeftButton = 1,
+        RightButton = 2,
+        MiddleButton = 4
+    };
     class MouseEventArgs : public EventArgsBase
     {
     public:
-        enum class Button
-        {
-            LeftButton = 1,
-            RightButton = 2,
-            MiddleButton = 4
-        };
-        Button pressed_button_;
+        MouseButton pressed_button_;
         Point2i32 Location;
     };
 
@@ -131,13 +131,14 @@ namespace ceiba
         {
             //下面的inline都是玄学
         public:
+            constexpr static std::size_t EVENT_REVERSE_SIZE = 3;
             EventProxy() : function_container_{0}, current_token_{0}
             {
-                function_container_.reserve(3);
+                function_container_.reserve(EVENT_REVERSE_SIZE);
             }
             EventProxy(const Type default_function) : function_container_{0}, current_token_{0}
             {
-                function_container_.reserve(3);
+                function_container_.reserve(EVENT_REVERSE_SIZE);
                 function_container_.push_back(std::make_pair(default_function, current_token_));
             }
             explicit EventProxy(size_t function_count) : function_container_{0}, current_token_(0)
@@ -255,6 +256,11 @@ namespace ceiba
         {
             wp_related_event_ = ref_event.GetWeakPtr();
             token_ = token;
+        }
+        void Reset(T& ref_event, const typename T::Type& event_function)
+        {
+            wp_related_event_ = ref_event.GetWeakPtr();
+            token_ = ref_event.AddFunction(event_function);
         }
 
     private:

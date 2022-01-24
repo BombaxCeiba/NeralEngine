@@ -17,8 +17,6 @@ SoftRender::SoftRender(Window& window, const Vector4fAlignas16& position, const 
 
 Vector3fAlignasDefault SoftRender::DefaultShader(const ObjContentType::Vertex& vertex, const MtlContent& mtl, const Vector4fAlignas16& camera_position, const Vector3fAlignas16& view_position)
 {
-    //TODO:传入原始坐标数据进行着色
-    //Vector3fAlignasDefault result_color = Vector3fAlignasDefault{ 1.0f,1.0f,1.0f };
     static std::array<Light, 2> light_list{
         Light{{20, 20, 20}, {0, 122, 204}},
         Light{{-20, -20, -20}, {202, 81, 0}}};
@@ -412,7 +410,7 @@ ceiba::EventState SoftRender::Rendering(const ceiba::RenderEventArgs& event_args
     {
         auto& mtls_in_obj = p_obj_content_->mtls_;
         static MtlContent tmp_mtl{
-            {0.0004f, 0.0004f, 0.0004f} /*Ka*/, {1.0f, 1.0f, 1.0f} /*Kd*/, {0.2f, 0.2f, 0.2f} /*Ks*/,
+            {0.0002f, 0.0002f, 0.0002f} /*Ka*/, {2.f, 2.f, 2.f} /*Kd*/, {1e-25f, 1e-25f, 1e-25f} /*Ks*/,
             10.0f, //Ns
             1.0f,  //Ni
             1.0f   //d
@@ -574,7 +572,7 @@ ceiba::EventState SoftRender::Rendering(const ceiba::RenderEventArgs& event_args
                                                               centre_x, centre_y, depth, t);
                             vertex_to_render.normal = Vector3fAlignas16::ToVector3(Interpolate3D(centre_barycentric_args, 1.0f, handeled_normal));
                             auto interpolated_view_position = Interpolate3D(centre_barycentric_args, 1.0f, mvp_position);
-                            average_color = DepthVisualizer(vertex_to_render, default_mtl, camera_.GetPosition(), interpolated_view_position);
+                            average_color = DefaultShader(vertex_to_render, default_mtl, camera_.GetPosition(), interpolated_view_position);
                             ColorRGB24 color_to_draw(average_color);
                             size_t color_index = (x + (y * depth_buffer_.GetWidth())) * sizeof(ColorRGB24);
                             Set24bppRGBPixelColorUnsafe(render_target_picture_data.Scan0, color_index, color_to_draw);
