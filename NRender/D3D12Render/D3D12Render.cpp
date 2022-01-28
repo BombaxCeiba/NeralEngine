@@ -14,31 +14,27 @@ using namespace dusk::tools;
 
 void D3D12Render::PrintAdapters()
 {
-    std::cout << '\n';
-    std::wstring next_retract = L"  ";
     ComPtr<IDXGIAdapter> adapter{};
+    DXGI_ADAPTER_DESC adapter_desc;
     for (UINT i = 0; dxgi_factory_->EnumAdapters(i, &adapter) != DXGI_ERROR_NOT_FOUND; ++i)
     {
-        DXGI_ADAPTER_DESC adapter_desc;
         adapter->GetDesc(&adapter_desc);
-        std::wcout << L"Adapter: " << adapter_desc.Description << L'\n';
+        dusk::LogDebug<dusk::Outputer::WConsole>(L"Adapter:", adapter_desc.Description);
 
-        PrintAdapterOutputs(std::move(adapter), next_retract);
+        PrintAdapterOutputs(std::move(adapter));
     }
-    std::cout << std::endl;
 }
 
-void D3D12Render::PrintAdapterOutputs(Microsoft::WRL::ComPtr<IDXGIAdapter> adapter, const std::wstring& retract)
+void D3D12Render::PrintAdapterOutputs(Microsoft::WRL::ComPtr<IDXGIAdapter> adapter)
 {
-    std::wstring next_retract = L"    ";
     ComPtr<IDXGIOutput> output{};
+    DXGI_OUTPUT_DESC output_desc;
     for (UINT i = 0; adapter->EnumOutputs(i, &output) != DXGI_ERROR_NOT_FOUND; ++i)
     {
-        DXGI_OUTPUT_DESC output_desc;
         output->GetDesc(&output_desc);
-        std::wcout << retract << L"Output: " << output_desc.DeviceName << L'\n';
+        dusk::LogDebug<dusk::Outputer::WConsole>(L"  ", L"Output: ", output_desc.DeviceName);
 
-        PrintOutputDisplayModes(std::move(output), back_buffer_format_, next_retract);
+        PrintOutputDisplayModes(std::move(output), back_buffer_format_);
     }
 }
 
@@ -48,23 +44,25 @@ void D3D12Render::ResetCommandList()
     ThrowIfFailed(command_list_->Reset(command_allocator_.Get(), pipeline_state_.Get()));
 }
 
-void D3D12Render::PrintOutputDisplayModes(Microsoft::WRL::ComPtr<IDXGIOutput> output, DXGI_FORMAT format, const std::wstring& retract)
+void D3D12Render::PrintOutputDisplayModes(Microsoft::WRL::ComPtr<IDXGIOutput> output, DXGI_FORMAT format)
 {
-    UINT count = 0;
+    UINT display_mode_count = 0;
     UINT flags = 0;
+    std::string retract{"    "};
 
     // 输入空指针以取得元素数量
-    output->GetDisplayModeList(format, flags, &count, nullptr);
+    ThrowIfFailed(output->GetDisplayModeList(format, flags, &display_mode_count, nullptr));
 
-    std::vector<DXGI_MODE_DESC> mode_descs(count);
-    output->GetDisplayModeList(format, flags, &count, &mode_descs.front());
+    std::vector<DXGI_MODE_DESC> mode_descs(display_mode_count);
+    ThrowIfFailed(output->GetDisplayModeList(format, flags, &display_mode_count, &mode_descs.front()));
 
     for (const auto& desc : mode_descs)
     {
         auto rate = static_cast<double>(desc.RefreshRate.Numerator) / static_cast<double>(desc.RefreshRate.Denominator);
-        std::wcout << retract << L"Width = " << std::to_wstring(desc.Width) + L' '
-                   << retract << L"Height = " << std::to_wstring(desc.Height) + L' '
-                   << retract << L"Refresh rate = " << std::to_wstring(rate) << L'\n';
+        dusk::LogDebug<dusk::Outputer::Console>(
+            retract, "Width = ", std::to_string(desc.Width),
+            retract, "Height = ", std::to_string(desc.Height),
+            retract, "Refresh rate = ", std::to_string(rate));
     }
 }
 

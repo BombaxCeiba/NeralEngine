@@ -6,7 +6,7 @@
  */
 #pragma once
 #include <chrono>
-#include <profileapi.h> //win32 only
+#include <Windows.h> //win32 only
 
 namespace dusk
 {

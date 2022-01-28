@@ -22,13 +22,13 @@ namespace dusk
 {
     namespace LogType
     {
-        DUSK_MAKE_LOG_TYPE_AND_LITERAL_STRING_OF_IT(Error, std::string, "Error :");
-        DUSK_MAKE_LOG_TYPE_AND_LITERAL_STRING_OF_IT(Warning, std::string, "Warning :");
-        DUSK_MAKE_LOG_TYPE_AND_LITERAL_STRING_OF_IT(Debug, std::string, "Debug :")
+        DUSK_MAKE_LOG_TYPE_AND_LITERAL_STRING_OF_IT(Error, std::string, "[Error] ");
+        DUSK_MAKE_LOG_TYPE_AND_LITERAL_STRING_OF_IT(Warning, std::string, "[Warning] ");
+        DUSK_MAKE_LOG_TYPE_AND_LITERAL_STRING_OF_IT(Debug, std::string, "[Debug] ")
 
-        DUSK_MAKE_LOG_TYPE_AND_LITERAL_STRING_OF_IT(Error, std::wstring, L"Error :");
-        DUSK_MAKE_LOG_TYPE_AND_LITERAL_STRING_OF_IT(Warning, std::wstring, L"Warning :");
-        DUSK_MAKE_LOG_TYPE_AND_LITERAL_STRING_OF_IT(Debug, std::wstring, L"Debug :")
+        DUSK_MAKE_LOG_TYPE_AND_LITERAL_STRING_OF_IT(Error, std::wstring, L"[Error] ");
+        DUSK_MAKE_LOG_TYPE_AND_LITERAL_STRING_OF_IT(Warning, std::wstring, L"[Warning] ");
+        DUSK_MAKE_LOG_TYPE_AND_LITERAL_STRING_OF_IT(Debug, std::wstring, L"[Debug] ")
     }
     namespace Outputer
     {
@@ -37,10 +37,28 @@ namespace dusk
         public:
             using StringType = std::string;
 
-            template <class LogType, class StringType1 = StringType, class StringType2 = StringType>
-            static void Print(LogType log_type_function_pointer, StringType1&& content, StringType2&& end_string = StringType{'\n'})
+            template <class LogType, class... StringTypes>
+            static void Print(LogType log_type_function_pointer, StringTypes&&... contents)
             {
-                std::cout << log_type_function_pointer(StringType{}) << content << end_string;
+                std::cout << log_type_function_pointer(StringType{});
+                (std::cout << ... << contents) << '\n';
+            }
+
+            static void DisableCoutSyncWithStdio()
+            {
+                std::ios::sync_with_stdio(false);
+            }
+        };
+        class WConsole
+        {
+        public:
+            using StringType = std::wstring;
+
+            template <class LogType, class... StringTypes>
+            static void Print(LogType log_type_function_pointer, StringTypes&&... contents)
+            {
+                std::wcout << log_type_function_pointer(StringType{});
+                (std::wcout << ... << contents) << L'\n';
             }
 
             static void DisableCoutSyncWithStdio()
@@ -49,64 +67,33 @@ namespace dusk
             }
         };
     }
-    template <class Outputer, class String = typename Outputer::StringType, class String1 = String, class LogType = String (*)(String)>
-    inline void Log(LogType log_type_function_pointer, String1&& content)
+    template <class Outputer, class... OutputTypes, class String = typename Outputer::StringType, class LogType = String (*)(String)>
+    inline void Log(LogType log_type_function_pointer, OutputTypes&&... contents)
     {
         Outputer::template Print(
             std::forward<LogType>(log_type_function_pointer),
-            std::forward<String>(content));
+            std::forward<OutputTypes>(contents)...);
     }
-    template <class Outputer, class String = typename Outputer::StringType, class String1 = String, class String2 = String, class LogType = String (*)(String)>
-    inline void Log(LogType log_type_function_pointer, String1&& content, String2&& end_string)
-    {
-        Outputer::template Print(
-            std::forward<LogType>(log_type_function_pointer),
-            std::forward<String1>(content),
-            std::forward<String2>(end_string));
-    }
-    template <class Outputer, class String = typename Outputer::StringType, class String1 = String, class LogType = String (*)(String)>
-    inline void LogError(String1&& content)
+    template <class Outputer, class... OutputTypes, class String = typename Outputer::StringType, class LogType = String (*)(String)>
+    inline void LogError(OutputTypes&&... contents)
     {
         Log<Outputer>(
             std::forward<LogType>(&::dusk::LogType::Error),
-            std::forward<String1>(content));
+            std::forward<OutputTypes>(contents)...);
     }
-    template <class Outputer, class String = typename Outputer::StringType, class String1 = String, class String2 = String, class LogType = String (*)(String)>
-    inline void LogError(String1&& content, String2&& end_string)
-    {
-        Log<Outputer>(
-            std::forward<LogType>(&::dusk::LogType::Error),
-            std::forward<String1>(content),
-            std::forward<String2>(end_string));
-    }
-    template <class Outputer, class String = typename Outputer::StringType, class String1 = String, class LogType = String (*)(String)>
-    inline void LogWarning(String1&& content)
+
+    template <class Outputer, class... OutputTypes, class String = typename Outputer::StringType, class LogType = String (*)(String)>
+    inline void LogWarning(OutputTypes&&... contents)
     {
         Log<Outputer>(
             std::forward<LogType>(&::dusk::LogType::Warning),
-            std::forward<String1>(content));
+            std::forward<OutputTypes>(contents)...);
     }
-    template <class Outputer, class String = typename Outputer::StringType, class String1 = String, class String2 = String, class LogType = String (*)(String)>
-    inline void LogWarning(String1&& content, String2&& end_string)
-    {
-        Log<Outputer>(
-            std::forward<LogType>(&::dusk::LogType::Warning),
-            std::forward<String1>(content),
-            std::forward<String2>(end_string));
-    }
-    template <class Outputer, class String = typename Outputer::StringType, class String1 = String, class LogType = String (*)(String)>
-    inline void LogDebug(String1&& content)
+    template <class Outputer, class... OutputTypes, class String = typename Outputer::StringType, class LogType = String (*)(String)>
+    inline void LogDebug(OutputTypes&&... contents)
     {
         Log<Outputer>(
             std::forward<LogType>(&::dusk::LogType::Debug),
-            std::forward<String1>(content));
-    }
-    template <class Outputer, class String = typename Outputer::StringType, class String1 = String, class String2 = String, class LogType = String (*)(String)>
-    inline void LogDebug(String1&& content, String2&& end_string)
-    {
-        Log<Outputer>(
-            std::forward<LogType>(&::dusk::LogType::Debug),
-            std::forward<String1>(content),
-            std::forward<String2>(end_string));
+            std::forward<OutputTypes>(contents)...);
     }
 }

@@ -12,6 +12,8 @@ TEST(Log, TryToLog)
     dusk::Outputer::Console::StringType test_str{"Test Error Log"};
     dusk::Log<dusk::Outputer::Console>(&dusk::LogType::Error, test_str);
     dusk::LogError<dusk::Outputer::Console>(test_str);
+    dusk::LogError<dusk::Outputer::Console>(test_str, test_str);
+
     dusk::LogWarning<dusk::Outputer::Console>(test_str);
     dusk::LogDebug<dusk::Outputer::Console>(test_str);
 }

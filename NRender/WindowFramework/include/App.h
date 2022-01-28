@@ -39,6 +39,7 @@ public:
 private:
     App();
     ~App();
+    constexpr static int empty_gdi_plus_token_ = 0;
     ULONG_PTR gdiplus_token_;
     WindowHashMap windows_;
 

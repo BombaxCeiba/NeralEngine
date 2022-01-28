@@ -19,7 +19,7 @@ HINSTANCE App::GetHandle()
 
 void App::EnableGDIPlus()
 {
-    if (gdiplus_token_ == NULL)
+    if (gdiplus_token_ == empty_gdi_plus_token_)
     {
         Gdiplus::GdiplusStartupInput gdiplusStartupInput{};
         Gdiplus::GdiplusStartup(&gdiplus_token_, &gdiplusStartupInput, NULL);
@@ -109,7 +109,7 @@ int32_t App::Run()
     return -1;
 }
 
-App::App() : main_window_{NULL}, gdiplus_token_{NULL}
+App::App() : main_window_{NULL}, gdiplus_token_{empty_gdi_plus_token_}
 {
 }
 

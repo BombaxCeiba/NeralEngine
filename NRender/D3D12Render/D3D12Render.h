@@ -5,18 +5,19 @@
  * @Copyright (c) 2021 Dusk. All rights reserved.
  */
 #pragma once
-#include<vector>
-#include<iostream>
-#include<wrl/client.h>
-#include<dxgi1_4.h>
-#include<d3d12.h>
-#include<sal.h>
-#include<DirectXMath.h>
-#include"DXUtils.h"
-#include"RenderBase.h"
-#include"WindowFramework/include/Window.h"
+#include <vector>
+#include <iostream>
+#include <wrl/client.h>
+#include <dxgi1_4.h>
+#include <d3d12.h>
+#include <sal.h>
+#include <DirectXMath.h>
+#include "DXUtils.h"
+#include "RenderBase.h"
+#include "WindowFramework/include/Window.h"
+#include "Logger.h"
 
-class D3D12Render :public RenderBase
+class D3D12Render : public RenderBase
 {
 public:
     ceiba::EventFunctionGuard<decltype(Window::on_rendering_)> on_rendering_event_guard_;
@@ -45,8 +46,8 @@ public:
     D3D12Render(Window& window);
     ~D3D12Render() = default;
     void PrintAdapters();
-    void PrintAdapterOutputs(Microsoft::WRL::ComPtr<IDXGIAdapter> adapter, const std::wstring & retract = L"");
-    void PrintOutputDisplayModes(Microsoft::WRL::ComPtr<IDXGIOutput> output, DXGI_FORMAT format, const std::wstring & retract = L"");
+    void PrintAdapterOutputs(Microsoft::WRL::ComPtr<IDXGIAdapter> adapter);
+    void PrintOutputDisplayModes(Microsoft::WRL::ComPtr<IDXGIOutput> output, DXGI_FORMAT format);
     ceiba::EventState OnRending(const ceiba::RenderEventArgs&);
 
 private:
