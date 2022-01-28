@@ -67,45 +67,45 @@ namespace dusk
     template <class Outputer, class String = typename Outputer::StringType, class String1 = String, class LogType = String (*)(String)>
     inline void LogError(String1&& content)
     {
-        Log(
-            std::forward<LogType>(&LogType::Error),
+        Log<Outputer>(
+            std::forward<LogType>(&::dusk::LogType::Error),
             std::forward<String1>(content));
     }
     template <class Outputer, class String = typename Outputer::StringType, class String1 = String, class String2 = String, class LogType = String (*)(String)>
     inline void LogError(String1&& content, String2&& end_string)
     {
-        Log(
-            std::forward<LogType>(&LogType::Error),
+        Log<Outputer>(
+            std::forward<LogType>(&::dusk::LogType::Error),
             std::forward<String1>(content),
             std::forward<String2>(end_string));
     }
     template <class Outputer, class String = typename Outputer::StringType, class String1 = String, class LogType = String (*)(String)>
     inline void LogWarning(String1&& content)
     {
-        Log(
-            std::forward<LogType>(&LogType::Warning),
+        Log<Outputer>(
+            std::forward<LogType>(&::dusk::LogType::Warning),
             std::forward<String1>(content));
     }
     template <class Outputer, class String = typename Outputer::StringType, class String1 = String, class String2 = String, class LogType = String (*)(String)>
     inline void LogWarning(String1&& content, String2&& end_string)
     {
-        Log(
-            std::forward<LogType>(&LogType::Warning),
+        Log<Outputer>(
+            std::forward<LogType>(&::dusk::LogType::Warning),
             std::forward<String1>(content),
             std::forward<String2>(end_string));
     }
     template <class Outputer, class String = typename Outputer::StringType, class String1 = String, class LogType = String (*)(String)>
     inline void LogDebug(String1&& content)
     {
-        Log(
-            std::forward<LogType>(&LogType::Debug),
+        Log<Outputer>(
+            std::forward<LogType>(&::dusk::LogType::Debug),
             std::forward<String1>(content));
     }
     template <class Outputer, class String = typename Outputer::StringType, class String1 = String, class String2 = String, class LogType = String (*)(String)>
     inline void LogDebug(String1&& content, String2&& end_string)
     {
-        Log(
-            std::forward<LogType>(&LogType::Debug),
+        Log<Outputer>(
+            std::forward<LogType>(&::dusk::LogType::Debug),
             std::forward<String1>(content),
             std::forward<String2>(end_string));
     }
