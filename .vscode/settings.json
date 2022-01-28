@@ -86,6 +86,9 @@
         "xutility": "cpp",
         "any": "cpp",
         "queue": "cpp",
-        "set": "cpp"
+        "set": "cpp",
+        "complex": "cpp",
+        "condition_variable": "cpp",
+        "semaphore": "cpp"
     }
 }

@@ -10,6 +10,7 @@
 #include "WindowFramework/include/App.h"
 #include "SoftRender/SoftRender.h"
 #include "D3D12Render/D3D12Render.h"
+#include "Logger.h"
 
 #include "Logger.h"
 #include "Utils.h"
@@ -24,6 +25,7 @@ int main()
 #endif
     auto hInstance = App::GetHandle();
     App::GetInstance().EnableGDIPlus();
+    dusk::Outputer::Console::DisableCoutSyncWithStdio();
 #if !(defined(DEBUG) || defined(_DEBUG))
     App::HideConsoleWindow();
 #endif

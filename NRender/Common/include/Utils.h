@@ -25,8 +25,8 @@ namespace dusk
 {
     template <typename T>
     struct function_first_argument_type;
-    template <typename R, typename First, typename... Args>
-    struct function_first_argument_type<R(First, Args...)>
+    template <typename C, typename R, typename First, typename... Args>
+    struct function_first_argument_type<R (C::*)(First, Args...)>
     {
         using type = First;
     };

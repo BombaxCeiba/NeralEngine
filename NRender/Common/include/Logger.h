@@ -4,95 +4,63 @@
  * @FilePath: \NRender\NRender\Common\include\PhoenixLogger.h
  * @Copyright (c) 2021 Dusk. All rights reserved.
  */
+#pragma once
+#include <iostream>
 #include <type_traits>
 #include "Utils.h"
 
+#define DUSK_MAKE_LOG_TYPE_AND_LITERAL_STRING_OF_IT(log_type, string_type, literal_string) \
+    inline string_type log_type(string_type tag)                                           \
+    {                                                                                      \
+        static string_type log_type_tip_string{literal_string};                            \
+        return log_type_tip_string;                                                        \
+    }
+
+#define DUSK_LOG_TYPE(log_type)
+
 namespace dusk
 {
-    struct OutputerBase
-    {
-        template <typename StringType>
-        static void Print(StringType&& type, StringType&& content, StringType&& end_string);
-        template <typename Derived>
-        struct CheckOutputMethodExist
-        {
-            constexpr static bool value =
-                (sizeof(&Derived::Print) == sizeof(&::dusk::OutputerBase::template Print<::dusk::function_first_argument_type<decltype(Derived::Print)>::type>)) &&
-                std::is_same<
-                    decltype(&OutputerBase::template Print<function_first_argument_type<decltype(&Derived::Print)>::type>),
-                    decltype(&Derived::Print)>::value;
-            operator bool() const
-            {
-                return value;
-            }
-        };
-
-    protected:
-        ~OutputerBase() = default;
-    };
-    struct LogTypeBase
-    {
-        template <typename T, typename S = void>
-        struct CheckLogTypeStringExist;
-        template <typename Derived>
-        struct CheckLogTypeStringExist<Derived, decltype(Derived::type_)>
-        {
-            constexpr static bool value = true;
-            constexpr auto GetTypeString() const -> decltype(Derived::type_)
-            {
-                return Derived::type_;
-            }
-        };
-        template <typename Derived>
-        struct CheckLogTypeStringExist<Derived, decltype(Derived::type)>
-        {
-            constexpr static bool value = true;
-            constexpr auto GetTypeString() const -> decltype(Derived::type)
-            {
-                return Derived::type;
-            }
-        };
-        template <typename Derived>
-        struct CheckLogTypeStringExist<Derived, decltype(Derived::Type)>
-        {
-            constexpr static bool value = true;
-            constexpr auto GetTypeString() const -> decltype(Derived::Type)
-            {
-                return Derived::Type;
-            }
-        };
-        template <typename Derived>
-        struct CheckLogTypeStringExist<Derived, void>
-        {
-            constexpr static bool value = false;
-        };
-
-    protected:
-        ~LogTypeBase() = default;
-    };
     namespace LogType
     {
-        struct Error : public LogTypeBase
+        DUSK_MAKE_LOG_TYPE_AND_LITERAL_STRING_OF_IT(Error, std::string, "Error :");
+        DUSK_MAKE_LOG_TYPE_AND_LITERAL_STRING_OF_IT(Warning, std::string, "Warning :");
+        DUSK_MAKE_LOG_TYPE_AND_LITERAL_STRING_OF_IT(Log, std::string, "Log :")
+        DUSK_MAKE_LOG_TYPE_AND_LITERAL_STRING_OF_IT(Error, std::wstring, L"Error :");
+        DUSK_MAKE_LOG_TYPE_AND_LITERAL_STRING_OF_IT(Warning, std::wstring, L"Warning :");
+        DUSK_MAKE_LOG_TYPE_AND_LITERAL_STRING_OF_IT(Log, std::wstring, L"Log :")
+    }
+    namespace Outputer
+    {
+        class Console
         {
+        public:
+            using StringType = std::string;
+
+            template <class LogType, class StringType1 = StringType, class StringType2 = StringType>
+            static void Print(LogType log_type_function, StringType1&& content, StringType2&& end_string = StringType{'\n'})
+            {
+                std::cout << log_type_function(StringType{}) << content << end_string;
+            }
+
+            static void DisableCoutSyncWithStdio()
+            {
+                std::ios::sync_with_stdio(false);
+            }
         };
     }
-    namespace OutputerType
+    template <class Outputer, class String = typename Outputer::StringType, class String1 = String, class LogType = String (*)(String)>
+    inline void Log(LogType log_type_function, String1&& content)
     {
-        struct Console : public OutputerBase
-        {
-        };
+        Outputer::template Print(
+            std::forward<LogType>(log_type_function),
+            std::forward<String>(content));
     }
-    template <typename Type, typename Outputer, typename StringType1, typename StringType2 = StringType1,
-              typename = typename std::enable_if<
-                  std::is_base_of<
-                      ::dusk::OutputerBase, Outputer>::value>::type>
-    inline void Log(StringType1&& content, StringType2&& end_string = '\n')
+    template <class Outputer, class String = class Outputer::StringType, class String1 = String, class String2 = String, class LogType = String (*)(String)>
+    inline void Log(LogType log_type_function, String1&& content, String2&& end_string)
     {
-        static_assert(dusk::OutputerBase::CheckOutputMethodExist<Outputer>::value, "You should override function Print(...) which in class OutputerBase!");
-        static_assert(dusk::LogTypeBase::CheckLogTypeStringExist<Type>::value, "Need static data member Type::type_ or Type::type or Type::Type_ in class Type!");
-        Outputer::Print(
-            std::forward<StringType1>(dusk::LogTypeBase::CheckLogTypeStringExist<Type>::GetTypeString()),
-            std::forward<StringType1>(content),
-            std::forward<StringType2>(end_string));
+        Outputer::template Print(
+            std::forward<LogType>(log_type_function),
+            std::forward<String1>(content),
+            std::forward<String2>(end_string));
     }
 }
