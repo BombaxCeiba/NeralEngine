@@ -32,8 +32,25 @@ namespace dusk
     };
 
     template <typename T, std::size_t Length>
-    std::size_t GetLength(const T (&data)[Length])
+    constexpr std::size_t GetLength(const T (&data)[Length])
     {
         return Length;
     }
+    template <typename T, typename C, std::size_t Length>
+    constexpr std::size_t GetLength(const T (C::*(data))[Length])
+    {
+        return Length;
+    }
+    template <typename T, typename C, std::size_t Length>
+    constexpr std::size_t GetLength(T (C::*(data))[Length])
+    {
+        return Length;
+    }
+
+    template <typename MemoryType>
+    void SetMemoryZero(MemoryType* p_memory_to_set_zero, std::size_t memory_size)
+    {
+        memset(p_memory_to_set_zero, 0, sizeof(MemoryType) * memory_size);
+    }
+
 }

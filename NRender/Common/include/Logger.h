@@ -16,8 +16,6 @@
         return log_type_tip_string;                                                        \
     }
 
-#define DUSK_LOG_TYPE(log_type)
-
 namespace dusk
 {
     namespace LogType

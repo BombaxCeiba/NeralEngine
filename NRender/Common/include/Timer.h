@@ -5,7 +5,6 @@
  * @Copyright (c) 2021 Dusk. All rights reserved.
  */
 #pragma once
-#include <chrono>
 #include <Windows.h> //win32 only
 
 namespace dusk
