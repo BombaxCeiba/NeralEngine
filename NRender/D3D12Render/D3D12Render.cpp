@@ -9,7 +9,7 @@
 #endif
 #include "D3D12Render.h"
 #include "Utils.h"
-#include "WinAPIHelper.h"
+#include "Win32APIHelper.h"
 
 using namespace Microsoft::WRL;
 using namespace dusk::tools;
@@ -21,45 +21,24 @@ void D3D12Render::PrintAdapters()
 
     constexpr static int ADAPTER_WCHAR_DESC_SIZE = dusk::GetLength(&DXGI_ADAPTER_DESC::Description);
     //预分配内存
-    auto p_adapter_char_desc_buffer = std::make_unique<char[]>(ADAPTER_WCHAR_DESC_SIZE);
-    dusk::SetMemoryZero(p_adapter_char_desc_buffer.get(), ADAPTER_WCHAR_DESC_SIZE);
+    dusk::DynamicBuffer<char> buffer_for_conversion{ADAPTER_WCHAR_DESC_SIZE};
 
     for (UINT i = 0; dxgi_factory_->EnumAdapters(i, &adapter) != DXGI_ERROR_NOT_FOUND; ++i)
     {
         adapter->GetDesc(&adapter_desc);
 
-        int desc_char_size =
-            dusk::EvaluateWideCharToMultiByteSize(CP_ACP, adapter_desc.Description, dusk::EMPTY_FLAG, ADAPTER_WCHAR_DESC_SIZE);
-        if (ADAPTER_WCHAR_DESC_SIZE > desc_char_size)
-        {
-            ::WideCharToMultiByte(
-                CP_ACP,
-                dusk::EMPTY_FLAG,
-                adapter_desc.Description,
-                ADAPTER_WCHAR_DESC_SIZE,
-                p_adapter_char_desc_buffer.get(),
-                ADAPTER_WCHAR_DESC_SIZE, //使用预分配的缓冲区大小
-                nullptr,
-                nullptr);
-            dusk::LogDebug<dusk::Outputer::Console>("Adapter:", p_adapter_char_desc_buffer.get());
-            dusk::SetMemoryZero(p_adapter_char_desc_buffer.get(), ADAPTER_WCHAR_DESC_SIZE);
-        }
-        else
-        {
-            //若转换后字符串长度超出预分配内存范围，则重新分配内存
-            auto p_adapter_char_desc_standby_buffer = std::make_unique<char[]>(desc_char_size);
-            dusk::SetMemoryZero(p_adapter_char_desc_standby_buffer.get(), desc_char_size);
-            ::WideCharToMultiByte(
-                CP_ACP,
-                dusk::EMPTY_FLAG,
-                adapter_desc.Description,
-                ADAPTER_WCHAR_DESC_SIZE,
-                p_adapter_char_desc_standby_buffer.get(),
-                desc_char_size,
-                nullptr,
-                nullptr);
-            dusk::LogDebug<dusk::Outputer::Console>("Adapter:", p_adapter_char_desc_standby_buffer.get());
-        }
+        ::WideCharToMultiByte(
+            CP_ACP,
+            dusk::EMPTY_FLAG,
+            adapter_desc.Description,
+            ADAPTER_WCHAR_DESC_SIZE,
+            buffer_for_conversion.ToWriteByByteSize(
+                dusk::EvaluateWideCharToMultiByteSize(CP_ACP, adapter_desc.Description, dusk::EMPTY_FLAG, ADAPTER_WCHAR_DESC_SIZE)),
+            ADAPTER_WCHAR_DESC_SIZE, //使用预分配的缓冲区大小
+            nullptr,
+            nullptr);
+        dusk::LogDebug<dusk::Outputer::Console>("Adapter:", buffer_for_conversion.ToRead());
+        buffer_for_conversion.ResetMemory();
 
         PrintAdapterOutputs(std::move(adapter));
     }
@@ -71,44 +50,23 @@ void D3D12Render::PrintAdapterOutputs(Microsoft::WRL::ComPtr<IDXGIAdapter> adapt
     DXGI_OUTPUT_DESC output_desc;
 
     constexpr static int OUTPUT_DEVICE_NAME_WCHAR_SIZE = dusk::GetLength(&DXGI_OUTPUT_DESC::DeviceName);
-    auto p_output_device_char_name_buffer = std::make_unique<char[]>(OUTPUT_DEVICE_NAME_WCHAR_SIZE);
-    dusk::SetMemoryZero(p_output_device_char_name_buffer.get(), OUTPUT_DEVICE_NAME_WCHAR_SIZE);
+    dusk::DynamicBuffer<char> buffer_for_conversion{OUTPUT_DEVICE_NAME_WCHAR_SIZE};
     for (UINT i = 0; adapter->EnumOutputs(i, &output) != DXGI_ERROR_NOT_FOUND; ++i)
     {
         output->GetDesc(&output_desc);
 
-        int outputer_device_name_char_size =
-            dusk::EvaluateWideCharToMultiByteSize(CP_ACP, output_desc.DeviceName, dusk::EMPTY_FLAG, OUTPUT_DEVICE_NAME_WCHAR_SIZE);
-        if (OUTPUT_DEVICE_NAME_WCHAR_SIZE > outputer_device_name_char_size)
-        {
-            ::WideCharToMultiByte(
-                CP_ACP,
-                dusk::EMPTY_FLAG,
-                output_desc.DeviceName,
-                OUTPUT_DEVICE_NAME_WCHAR_SIZE,
-                p_output_device_char_name_buffer.get(),
-                OUTPUT_DEVICE_NAME_WCHAR_SIZE, //使用预分配的缓冲区大小
-                nullptr,
-                nullptr);
-            dusk::LogDebug<dusk::Outputer::Console>("  Outputer:", p_output_device_char_name_buffer.get());
-            dusk::SetMemoryZero(p_output_device_char_name_buffer.get(), OUTPUT_DEVICE_NAME_WCHAR_SIZE);
-        }
-        else
-        {
-            //若转换后字符串长度超出预分配内存范围，则重新分配内存
-            auto p_outputer_device_char_name_standby_buffer = std::make_unique<char[]>(outputer_device_name_char_size);
-            dusk::SetMemoryZero(p_outputer_device_char_name_standby_buffer.get(), outputer_device_name_char_size);
-            ::WideCharToMultiByte(
-                CP_ACP,
-                dusk::EMPTY_FLAG,
-                output_desc.DeviceName,
-                OUTPUT_DEVICE_NAME_WCHAR_SIZE,
-                p_outputer_device_char_name_standby_buffer.get(),
-                outputer_device_name_char_size,
-                nullptr,
-                nullptr);
-            dusk::LogDebug<dusk::Outputer::Console>("  Outputer:", p_outputer_device_char_name_standby_buffer.get());
-        }
+        ::WideCharToMultiByte(
+            CP_ACP,
+            dusk::EMPTY_FLAG,
+            output_desc.DeviceName,
+            OUTPUT_DEVICE_NAME_WCHAR_SIZE,
+            buffer_for_conversion.ToWriteByByteSize(
+                dusk::EvaluateWideCharToMultiByteSize(CP_ACP, output_desc.DeviceName, dusk::EMPTY_FLAG, OUTPUT_DEVICE_NAME_WCHAR_SIZE)),
+            OUTPUT_DEVICE_NAME_WCHAR_SIZE, //使用预分配的缓冲区大小
+            nullptr,
+            nullptr);
+        dusk::LogDebug<dusk::Outputer::Console>("  Outputer:", buffer_for_conversion.ToRead());
+        buffer_for_conversion.ResetMemory();
 
         PrintOutputDisplayModes(std::move(output), back_buffer_format_);
     }

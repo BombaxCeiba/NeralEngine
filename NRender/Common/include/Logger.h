@@ -59,7 +59,7 @@ namespace dusk
                 (std::wcout << ... << contents) << L'\n';
             }
 
-            static void DisableCoutSyncWithStdio()
+            static void DisableWCoutSyncWithStdio()
             {
                 std::ios::sync_with_stdio(false);
             }

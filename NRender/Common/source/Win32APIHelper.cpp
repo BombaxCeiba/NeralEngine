@@ -4,7 +4,7 @@
  * @FilePath: \NRender\NRender\Common\source\WinAPIHelper.cpp
  * @Copyright (c) 2021 Dusk. All rights reserved.
  */
-#include "WinAPIHelper.h"
+#include "Win32APIHelper.h"
 
 int dusk::EvaluateWideCharToMultiByteSize(UINT code_page, wchar_t* p_wchar_string, DWORD flags, int wchar_string_length)
 {

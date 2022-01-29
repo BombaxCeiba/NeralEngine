@@ -6,7 +6,6 @@
  */
 #pragma once
 #include <vector>
-#include <iostream>
 #include <wrl/client.h>
 #include <dxgi1_4.h>
 #include <d3d12.h>
