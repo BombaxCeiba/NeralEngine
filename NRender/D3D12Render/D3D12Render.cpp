@@ -32,7 +32,7 @@ void D3D12Render::PrintAdapters()
             dusk::EMPTY_FLAG,
             adapter_desc.Description,
             ADAPTER_WCHAR_DESC_SIZE,
-            buffer_for_conversion.ToWriteByByteSize(
+            buffer_for_conversion.ToWriteAllByByteSize(
                 dusk::EvaluateWideCharToMultiByteSize(CP_ACP, adapter_desc.Description, dusk::EMPTY_FLAG, ADAPTER_WCHAR_DESC_SIZE)),
             ADAPTER_WCHAR_DESC_SIZE, //使用预分配的缓冲区大小
             nullptr,
@@ -60,7 +60,7 @@ void D3D12Render::PrintAdapterOutputs(Microsoft::WRL::ComPtr<IDXGIAdapter> adapt
             dusk::EMPTY_FLAG,
             output_desc.DeviceName,
             OUTPUT_DEVICE_NAME_WCHAR_SIZE,
-            buffer_for_conversion.ToWriteByByteSize(
+            buffer_for_conversion.ToWriteAllByByteSize(
                 dusk::EvaluateWideCharToMultiByteSize(CP_ACP, output_desc.DeviceName, dusk::EMPTY_FLAG, OUTPUT_DEVICE_NAME_WCHAR_SIZE)),
             OUTPUT_DEVICE_NAME_WCHAR_SIZE, //使用预分配的缓冲区大小
             nullptr,
