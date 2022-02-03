@@ -27,16 +27,16 @@ public:
     InitializationState state_;
     DWORD error_code_;
 
-    ceiba::make_event<const HWND> on_loaded_;
-    ceiba::make_event<const ::ceiba::RenderEventArgs&> on_rendering_;
-    ceiba::make_event<> on_closing_; //事件将被逆序执行
-    ceiba::make_event<> on_closed_; //事件将被逆序执行
-    ceiba::make_event<const HWND> on_show_;
-    ceiba::make_event<const HWND> on_hide_;
-    ceiba::make_event<const ::ceiba::MouseEventArgs&> on_mouse_move_;
-    ceiba::make_event<> on_key_up_;
-    ceiba::make_event<const ::ceiba::KeyEventArgs&> on_key_down_;
-    ceiba::make_event<const ::ceiba::SizeChangedEventArgs&> on_size_changed_;
+    ceiba::DefaultEvent<const HWND> on_loaded_;
+    ceiba::DefaultEvent<const ::ceiba::RenderEventArgs&> on_rendering_;
+    ceiba::DefaultEvent<> on_closing_; //事件将被逆序执行
+    ceiba::DefaultEvent<> on_closed_; //事件将被逆序执行
+    ceiba::DefaultEvent<const HWND> on_show_;
+    ceiba::DefaultEvent<const HWND> on_hide_;
+    ceiba::DefaultEvent<const ::ceiba::MouseEventArgs&> on_mouse_move_;
+    ceiba::DefaultEvent<> on_key_up_;
+    ceiba::DefaultEvent<const ::ceiba::KeyEventArgs&> on_key_down_;
+    ceiba::DefaultEvent<const ::ceiba::SizeChangedEventArgs&> on_size_changed_;
 
     const std::wstring name_;
 
@@ -60,7 +60,7 @@ public:
     void Update();
     template <typename RenderImpl, typename = typename std::enable_if<
                                        std::is_base_of<RenderBase, RenderImpl>::value && !std::is_same<RenderBase, RenderImpl>::value>::type>
-    auto SetRender(std::shared_ptr<RenderImpl> sp_render, const typename decltype(on_rendering_)::Type& rendering)
+    auto SetRender(std::shared_ptr<RenderImpl> sp_render, const ceiba::event_function_type_t<decltype(on_rendering_)>& rendering)
         -> typename decltype(on_rendering_)::TokenType
     {
         sp_render_ = sp_render;
@@ -68,7 +68,7 @@ public:
     }
     template <typename RenderImpl, typename = typename std::enable_if<
                                        std::is_base_of<RenderBase, RenderImpl>::value && !std::is_same<RenderBase, RenderImpl>::value>::type>
-    auto SetRender1(std::shared_ptr<RenderImpl> sp_render, const typename decltype(on_rendering_)::Type& rendering)
+    auto SetRender1(std::shared_ptr<RenderImpl> sp_render, const typename ceiba::event_function_type_t<decltype(on_rendering_)>& rendering)
         -> ceiba::EventFunctionGuard<decltype(on_rendering_)>
     {
         sp_render_ = sp_render;

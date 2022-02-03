@@ -24,13 +24,6 @@ static_assert(false, "Unsupport!")
 
 namespace dusk
 {
-    template <typename T>
-    struct function_first_argument_type;
-    template <typename C, typename R, typename First, typename... Args>
-    struct function_first_argument_type<R (C::*)(First, Args...)>
-    {
-        using type = First;
-    };
 
     template <typename T, std::size_t Length>
     constexpr inline std::size_t GetLength(const T (&data)[Length])

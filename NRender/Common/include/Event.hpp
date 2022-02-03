@@ -3,12 +3,14 @@
 //***************************************************************************************
 #pragma once
 #include <stdint.h>
+#include <type_traits>
 #include <functional>
 #include <cstdint>
 #include <vector>
-#include <atomic>
+#include <mutex>
 #include <memory>
-#include <winuser.h>
+#include <Windows.h>
+#include "DuskTMP.hpp"
 
 namespace ceiba
 {
@@ -118,107 +120,121 @@ namespace ceiba
         return {raw_data};
     }
 
-    template <typename Func>
-    class Event;
-    template <typename... Args>
-    class Event<std::function<EventState(Args...)>>
+    template <class T, typename = void>
+    struct check_if_allocator_type_exist
+        : public std::false_type
+    {
+    };
+    template <class T>
+    struct check_if_allocator_type_exist<T, dusk::void_t<typename T::value_type>>
+        : public std::true_type
+    {
+    };
+
+    template <class Function, class TokenType>
+    using EventFunctionStorageType = std::pair<Function, TokenType>;
+
+    template <class FunctionType, class FunctionContainer, class TokenType, class... Args>
+    class EventImplProxy
     {
     public:
-        using TokenType = std::uint16_t;
-        using Type = std::function<EventState(Args...)>;
-        using FunctionContainer = std::vector<std::pair<Type, TokenType>>;
-        class EventProxy
+        static_assert(check_if_allocator_type_exist<FunctionContainer>{},
+                      "FunctionContainer does not have type(or alias) allocator_type!");
+        using Allocator = typename FunctionContainer::allocator_type;
+        EventImplProxy(const Allocator& allocator = {}) : function_container_{allocator}, current_token_{0}
         {
-            //下面的inline都是玄学
-        public:
-            constexpr static std::size_t EVENT_REVERSE_SIZE = 3;
-            EventProxy() : function_container_{0}, current_token_{0}
+        }
+        EventImplProxy(const FunctionType default_function, const Allocator& allocator = {})
+            : function_container_{allocator}, current_token_{0}
+        {
+            function_container_.push_back(std::make_pair(default_function, current_token_));
+        }
+
+        ~EventImplProxy() = default;
+        inline void TriggerEvent(Args... args)
+        {
+            for (auto&& func : function_container_)
             {
-                function_container_.reserve(EVENT_REVERSE_SIZE);
-            }
-            EventProxy(const Type default_function) : function_container_{0}, current_token_{0}
-            {
-                function_container_.reserve(EVENT_REVERSE_SIZE);
-                function_container_.push_back(std::make_pair(default_function, current_token_));
-            }
-            explicit EventProxy(size_t function_count) : function_container_{0}, current_token_(0)
-            {
-                function_container_.reserve(function_count);
-            }
-            EventProxy(const Type default_function, const size_t function_count) : function_container_{0}, current_token_{0}
-            {
-                function_container_.reserve(function_count);
-                function_container_.push_back(std::make_pair(default_function, current_token_));
-            }
-            ~EventProxy() = default;
-            inline void TriggerEvent(Args... args)
-            {
-                for (auto&& func : function_container_)
+                if (func.first)
                 {
-                    if (func.first)
+                    if (func.first(std::forward<Args>(args)...) == EventState::End)
+                        [[unlikely]]
                     {
-                        if (func.first(std::forward<Args>(args)...) == EventState::End)
-                            [[unlikely]]
-                        {
-                            break;
-                        }
-                    }
-                }
-            }
-            inline void TriggerEventReversely(Args... args)
-            {
-                for (auto&& func : reverse(function_container_))
-                {
-                    if (func.first)
-                    {
-                        if (func.first(std::forward<Args>(args)...) == EventState::End)
-                            [[unlikely]]
-                        {
-                            break;
-                        }
-                    }
-                }
-            }
-            inline const TokenType AddFunction(const Type& function)
-            {
-                ++current_token_;
-                function_container_.emplace_back(std::make_pair(function, current_token_));
-                return current_token_;
-            }
-            inline void DeleteFunction(const TokenType index)
-            {
-                for (auto it = function_container_.begin(); it != function_container_.end(); ++it)
-                {
-                    if (it->second == index)
-                    {
-                        function_container_.erase(it);
                         break;
                     }
                 }
             }
+        }
+        inline void TriggerEventReversely(Args... args)
+        {
+            for (auto&& func : reverse(function_container_))
+            {
+                if (func.first)
+                {
+                    if (func.first(std::forward<Args>(args)...) == EventState::End)
+                        [[unlikely]]
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+        inline const TokenType AddFunction(const FunctionType& function)
+        {
+            ++current_token_;
+            function_container_.emplace_back(std::make_pair(function, current_token_));
+            return current_token_;
+        }
+        inline void DeleteFunction(const TokenType index)
+        {
+            for (auto it = function_container_.begin(); it != function_container_.end(); ++it)
+            {
+                if (it->second == index)
+                {
+                    function_container_.erase(it);
+                    break;
+                }
+            }
+        }
 
-        private:
-            FunctionContainer function_container_;
-            TokenType current_token_;
-        };
+    private:
+        FunctionContainer function_container_;
+        TokenType current_token_;
+    };
+    template <class FunctionTy, class Mutex, class TokenTy, class StorageType, class Container, class... Args>
+    class EventImpl
+    {
+    public:
+        using FunctionType = FunctionTy;
+        static_assert(std::is_same<StorageType, EventFunctionStorageType<FunctionType, TokenTy>>::value,
+                      "User provieded first template argument of FunctionContainer in class Event<... ,FunctionContainer ,... > does not match expected type!");
+        using TokenType = TokenTy;
+        using EventProxy = EventImplProxy<FunctionType, Container, TokenType, Args...>;
         template <typename... Ts>
-        Event(Ts&&... ts) : proxy_instance_{std::make_shared<EventProxy>(std::forward<Ts>(ts)...)} {}
-        ~Event() = default;
+        EventImpl(Ts&&... ts) : proxy_instance_{std::make_shared<EventProxy>(std::forward<Ts>(ts)...)}
+        {
+        }
+        ~EventImpl() = default;
 
         void TriggerEvent(Args... args)
         {
+            std::lock_guard<Mutex> lock_guard{mutex_};
             proxy_instance_->TriggerEvent(std::forward<Args>(args)...);
         }
         void TriggerEventReversely(Args... args)
         {
+            std::lock_guard<Mutex> lock_guard{mutex_};
             proxy_instance_->TriggerEventReversely(std::forward<Args>(args)...);
         }
-        const TokenType AddFunction(const Type& function)
+        template <class Function = FunctionType>
+        const TokenType AddFunction(Function&& function)
         {
-            return proxy_instance_->AddFunction(std::forward<const Type&>(function));
+            std::lock_guard<Mutex> lock_guard{mutex_};
+            return proxy_instance_->AddFunction(std::forward<Function>(function));
         }
         void DeleteFunction(const TokenType index)
         {
+            std::lock_guard<Mutex> lock_guard{mutex_};
             proxy_instance_->DeleteFunction(std::move(index));
         }
         std::weak_ptr<EventProxy> GetWeakPtr() const noexcept
@@ -227,8 +243,59 @@ namespace ceiba
         }
 
     private:
+        Mutex mutex_;
         std::shared_ptr<EventProxy> proxy_instance_;
     };
+
+    template <class Function,
+              class Mutex,
+              class TokenType,
+              class FunctionContainer>
+    class Event;
+    template <
+        template <class...>
+        class Function,
+        class Mutex,
+        class TokenTy,
+        template <class...>
+        class FunctionContainer,
+        class StorageType,
+        class... CunstomFunctionContainerArgs,
+        class... Args>
+    class Event<Function<EventState(Args...)>,
+                Mutex,
+                TokenTy,
+                FunctionContainer<StorageType, CunstomFunctionContainerArgs...>>
+        : public EventImpl<Function<EventState(Args...)>, Mutex, TokenTy, StorageType, FunctionContainer<StorageType, CunstomFunctionContainerArgs...>, Args...>
+    {
+        using EventBase = EventImpl<Function<EventState(Args...)>, Mutex, TokenTy, StorageType, FunctionContainer<StorageType, CunstomFunctionContainerArgs...>, Args...>;
+        using EventBase::EventBase;
+    };
+    template <
+        class Mutex,
+        class TokenTy,
+        template <class...>
+        class FunctionContainer,
+        class StorageType,
+        class... CunstomFunctionContainerArgs,
+        class... Args>
+    class Event<EventState (*)(Args...),
+                Mutex,
+                TokenTy,
+                FunctionContainer<StorageType, CunstomFunctionContainerArgs...>>
+        : public EventImpl<EventState (*)(Args...), Mutex, TokenTy, StorageType, FunctionContainer<StorageType, CunstomFunctionContainerArgs...>, Args...>
+    {
+        using EventBase = EventImpl<EventState (*)(Args...), Mutex, TokenTy, StorageType, FunctionContainer<StorageType, CunstomFunctionContainerArgs...>, Args...>;
+        using EventBase::EventBase;
+    };
+
+    template <class T>
+    struct event_function_type
+    {
+        using type = typename T::FunctionType;
+    };
+    template <class T>
+    using event_function_type_t = typename event_function_type<T>::type;
 
     template <typename T>
     class EventFunctionGuard
@@ -236,7 +303,7 @@ namespace ceiba
         using TokenTy = typename T::TokenType;
 
     public:
-        EventFunctionGuard(T& ref_event, const typename T::Type& event_function)
+        EventFunctionGuard(T& ref_event, const typename T::FunctionType& event_function)
             : wp_related_event_{std::move(ref_event.GetWeakPtr())}
         {
             token_ = ref_event.AddFunction(event_function);
@@ -257,7 +324,7 @@ namespace ceiba
             wp_related_event_ = ref_event.GetWeakPtr();
             token_ = token;
         }
-        void Reset(T& ref_event, const typename T::Type& event_function)
+        void Reset(T& ref_event, const typename T::FunctionType& event_function)
         {
             wp_related_event_ = ref_event.GetWeakPtr();
             token_ = ref_event.AddFunction(event_function);
@@ -273,7 +340,8 @@ namespace ceiba
 #endif
 
     template <typename... Args>
-    using make_event = Event<std::function<EventState(Args...)>>;
-
+    using DefaultEvent = Event<std::function<EventState(Args...)>, std::mutex, std::uint16_t, std::vector<EventFunctionStorageType<std::function<EventState(Args...)>, std::uint16_t>>>;
+    template <typename... Args>
+    using DefaultFunctionPointerEvent = Event<EventState (*)(Args...), std::mutex, std::uint16_t, std::vector<EventFunctionStorageType<EventState (*)(Args...), std::uint16_t>>>;
 }
 namespace WindowFramework = ceiba;

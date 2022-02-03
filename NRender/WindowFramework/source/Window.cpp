@@ -18,7 +18,7 @@ Window::Window(
     const std::string& window_title
 #endif
     ,
-    const std::wstring& window_name, HINSTANCE app_instance, typename decltype(on_loaded_)::Type on_loaded)
+    const std::wstring& window_name, HINSTANCE app_instance, ceiba::event_function_type_t<decltype(on_loaded_)> on_loaded)
     : error_code_(0), hWnd_(nullptr), width_(DefaultWidth), height_(DefaultHeight), state_(InitializationState::Success), name_(window_name),
       on_loaded_{on_loaded},
       on_size_changed_{[this](const ceiba::SizeChangedEventArgs& size_changed_event_args) -> ceiba::EventState

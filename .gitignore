@@ -15,6 +15,7 @@ SwitchToGNUBuilder.bat
 /bin
 /lib
 /Test/bin
+/.VSCodeCounter
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
