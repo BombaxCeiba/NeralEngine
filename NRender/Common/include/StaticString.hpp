@@ -43,6 +43,17 @@ namespace dusk
     }
 
     template <char... Chars>
+    constexpr inline bool operator==(static_string<Chars...>, static_string<Chars...>)
+    {
+        return true;
+    }
+    template <char... CharLHS, char... CharRHS>
+    inline bool operator==(static_string<CharLHS...>, static_string<CharRHS...>)
+    {
+        return false;
+    }
+
+    template <char... Chars>
     auto AutoEndString(static_string<Chars...>) -> decltype(MakeFixStringOld(static_string<Chars>{}...));
     template <char... Previous, char Current, char... After>
     auto MakeFixStringOld(static_string<Previous...>, static_string<Current>, static_string<After>...)

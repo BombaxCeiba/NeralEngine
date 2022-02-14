@@ -9,7 +9,7 @@
 #include "TestMain.hpp"
 #include "StaticString.hpp"
 
-TEST(StaticString, StaticStringTest)
+TEST(StaticString, StaticStringContentTest)
 {
     std::string dynamic_string_1("TestStaticString");
     auto static_string_test_1 = DUSK_MAKE_STATIC_STRING("TestStaticString");
@@ -22,4 +22,18 @@ TEST(StaticString, StaticStringTest)
     std::cout << typeid(decltype(static_string_test_2)).name() << std::endl;
     std::string static_string_2(static_string_test_2.data);
     EXPECT_EQ(dynamic_string_2, static_string_2);
+}
+
+TEST(StaticString, StaticStringEqualityTest)
+{
+    auto static_string_test_1 = DUSK_MAKE_STATIC_STRING("TestStaticString");
+    auto static_string_test_2 = DUSK_MAKE_STATIC_STRING("TestStaticString");
+    EXPECT_EQ(static_string_test_1, static_string_test_2);
+}
+
+TEST(StaticString, StaticStringInequalityTest)
+{
+    auto static_string_test_1 = DUSK_MAKE_STATIC_STRING("TestStaticString");
+    auto static_string_test_2 = DUSK_MAKE_STATIC_STRING("InequalityTestStaticString");
+    EXPECT_NE(static_string_test_1, static_string_test_2);
 }

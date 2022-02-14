@@ -38,7 +38,7 @@ void D3D12Render::PrintAdapters()
             nullptr,
             nullptr);
         dusk::LogDebug<dusk::Outputer::Console>("Adapter:", buffer_for_conversion.ToRead());
-        buffer_for_conversion.ResetMemory();
+        buffer_for_conversion.ResetBuffer();
 
         PrintAdapterOutputs(std::move(adapter));
     }
@@ -66,7 +66,7 @@ void D3D12Render::PrintAdapterOutputs(Microsoft::WRL::ComPtr<IDXGIAdapter> adapt
             nullptr,
             nullptr);
         dusk::LogDebug<dusk::Outputer::Console>("  Outputer:", buffer_for_conversion.ToRead());
-        buffer_for_conversion.ResetMemory();
+        buffer_for_conversion.ResetBuffer();
 
         PrintOutputDisplayModes(std::move(output), back_buffer_format_);
     }

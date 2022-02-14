@@ -45,7 +45,7 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
 # using Intel C++
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
 # using Visual Studio C++
-    set(CMAKE_CXX_FLAGS "/MP /source-charset:utf-8 ${CMAKE_CXX_FLAGS}")
+    set(CMAKE_CXX_FLAGS "/MP /source-charset:utf-8 /Zc:__cplusplus ${CMAKE_CXX_FLAGS}")
 endif()
 
 add_definitions(-D_UNICODE)

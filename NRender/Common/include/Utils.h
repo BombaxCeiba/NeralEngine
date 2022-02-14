@@ -8,6 +8,7 @@
  */
 #pragma once
 #include <type_traits>
+#include <algorithm>
 #include <memory>
 #include <utility>
 
@@ -21,6 +22,12 @@ static_assert(false, "Unsupport!")
 #elif defined(__GNUC__)
 #define EXPORT_SYMBOL __attribute__((visibility("default")))
 #endif
+
+#if __cplusplus >= 202002L
+#define DUSK_NO_UNIQUE_ADDRESS_ATTRIBUTE [[no_unique_address]]
+#else
+#define DUSK_NO_UNIQUE_ADDRESS_ATTRIBUTE
+#endif //__cplusplus >= 202002L
 
 namespace dusk
 {
@@ -47,111 +54,199 @@ namespace dusk
         memset(p_memory_to_set_zero, 0, sizeof(MemoryType) * element_length);
     }
 
-    template <typename T>
+    template <typename T, typename Allocator = std::allocator<T>>
     class DynamicBuffer
     {
     public:
-        DynamicBuffer(std::size_t expected_element_count)
-            : buffer_byte_size_{expected_element_count * sizeof(T)}
+        static_assert(std::is_default_constructible<T>{},
+                      "T is not default constructible!");
+        using AllocatorTraits = std::allocator_traits<Allocator>;
+        using Pointer = AllocatorTraits::pointer;
+        using ConstPointer = AllocatorTraits::const_pointer;
+        using SizeType = AllocatorTraits::size_type;
+
+        DynamicBuffer(SizeType expected_element_count, Allocator allocator = {})
+            : element_count_{expected_element_count}, allocator_{allocator},
+              p_buffer_{AllocatorTraits::allocate(allocator, expected_element_count)}
         {
-            up_buffer_ = std::make_unique<T[]>(expected_element_count);
+            ConstructElements(allocator_, p_buffer_, element_count_);
         }
-        ~DynamicBuffer() = default;
+        template <typename InputIt>
+        DynamicBuffer(InputIt first, InputIt last, Allocator allocator = {})
+            : element_count_{std::distance(first, last)}, allocator_{allocator}
+        {
+            Pointer p_destination = AllocatorTraits::allocate(allocator, element_count_);
+            p_buffer_ = p_destination;
+            SizeType counter = 0;
+            try
+            {
+                while (first != last)
+                {
+                    *p_destination = *first;
+                    std::advance(p_destination);
+                    std::advance(first);
+                    counter++;
+                }
+            }
+            catch (...)
+            {
+                DestoryElements(allocator_, p_buffer_, counter);
+                AllocatorTraits::deallocate(allocator_, p_buffer_, element_count_);
+            }
+        }
+        ~DynamicBuffer()
+        {
+            DestoryElements(allocator_, p_buffer_, element_count_);
+            AllocatorTraits::deallocate(allocator_, p_buffer_, element_count_);
+        }
         DynamicBuffer(const DynamicBuffer&) = delete;
         DynamicBuffer& operator=(const DynamicBuffer&) = delete;
         DynamicBuffer Clone() const
         {
-            DynamicBuffer result{buffer_byte_size_ / sizeof(T)};
-            memcpy(result.up_buffer_.get(), this->up_buffer_.get(), buffer_byte_size_);
-            return result;
+            return {p_buffer_, std::next(p_buffer_, element_count_), allocator_};
         }
+
         DynamicBuffer(DynamicBuffer&&) = default;
         DynamicBuffer& operator=(DynamicBuffer&&) = default;
 
     private:
-        void ExpandAndRetain(std::size_t element_count, std::size_t new_buffer_byte_size)
+        void ResetMemory() noexcept
         {
-            auto up_bigger_buffer = std::make_unique<T[]>(element_count);
-            memcpy(up_bigger_buffer.get(), up_buffer_.get(), buffer_byte_size_);
-            up_buffer_.reset(std::move(up_bigger_buffer));
-            buffer_byte_size_ = new_buffer_byte_size;
+            memset(p_buffer_, 0, CalculateByteSize(element_count_));
         }
-        void ExpandAndDiscard(std::size_t element_count, std::size_t new_buffer_byte_size)
+        void ResetMemory(void* start, SizeType size) noexcept
         {
-            up_buffer_.reset();
-            up_buffer_ = std::make_unique<T[]>(element_count);
-            buffer_byte_size_ = new_buffer_byte_size;
+            memset(start, 0, sizeof(T) * size);
+        }
+        void ExpandAndRetain(SizeType element_count)
+        {
+            Pointer p_new_buffer = AllocatorTraits::allocate(allocator_, element_count);
+
+            auto first = p_buffer_;
+            auto destination = p_new_buffer;
+            ::memmove(destination, first, sizeof(T) * element_count_);
+            element_count_ = element_count;
+            //初始化多余内存
+            SizeType expand_count = element_count - element_count_;
+            memset(std::next(p_new_buffer + expand_size), 0, sizeof(T) * expand_count);
+
+            DestoryElements(allocator_, p_buffer_, element_count_);
+            AllocatorTraits::deallocate(allocator_, p_buffer_, element_count_);
+        }
+        void ExpandAndDiscard(SizeType element_count)
+        {
+            DestoryElements(allocator_, p_buffer_, element_count_);
+            AllocatorTraits::deallocate(allocator_, p_buffer_, element_count_);
+            p_buffer_ = AllocatorTraits::allocate(allocator_, element_count_);
+            element_count_ = element_count;
+            ResetMemory();
+        }
+        inline static SizeType CalculateElementCount(SizeType buffer_byte_size) noexcept
+        {
+            return buffer_byte_size / sizeof(T);
+        }
+        inline static SizeType CalculateByteSize(SizeType element_count) noexcept
+        {
+            return element_count * sizeof(T);
+        }
+        inline static void ConstructElements(Allocator allocator, Pointer p_buffer, SizeType element_count) noexcept
+        {
+            SizeType counter = 0;
+            try
+            {
+                for (; counter < element_count; ++counter)
+                {
+                    AllocatorTraits::construct(allocator, p_buffer);
+                    std::advance(p_buffer, 1);
+                }
+            }
+            catch (...)
+            {
+                DestoryElements(allocator, p_buffer, counter);
+                AllocatorTraits::deallocate(allocator, p_buffer, element_count);
+            }
+        }
+        inline static void DestoryElements(Allocator allocator, Pointer p_buffer, SizeType element_count) noexcept(noexcept(~T()))
+        {
+            Pointer p_buffer_it = p_buffer + element_count;
+            for (SizeType i = 0; i < element_count; ++i)
+            {
+                AllocatorTraits::destroy(allocator, p_buffer_it);
+                std::advance(p_buffer_it, -1);
+            }
         }
 
     public:
-        char* ToWriteUnsafe() noexcept
+        void ResetBuffer() noexcept(noexcept(~T()))
         {
-            return up_buffer_.get();
+            DestoryElements(allocator_, p_buffer_, element_count_);
+            ResetMemory();
         }
-        char* ToWriteByByteSize(std::size_t memory_byte_size)
+        Pointer ToWriteUnsafe() noexcept
         {
-            if (memory_byte_size <= buffer_byte_size_)
+            return p_buffer_;
+        }
+        Pointer ToWriteByByteSize(SizeType required_byte_size)
+        {
+            if (required_byte_size <= CalculateByteSize(element_count_))
             {
-                return up_buffer_.get();
+                return p_buffer_;
             }
             else
             {
-                std::size_t element_count = memory_byte_size / sizeof(T);
-                ExpandAndRetain(element_count, memory_byte_size);
-                return up_buffer_.get();
+                SizeType required_count = CalculateElementCount(required_byte_size);
+                ExpandAndRetain(required_count);
+                return p_buffer_;
             }
         }
-        char* ToWriteByElementCount(std::size_t element_count)
+        Pointer ToWriteByElementCount(SizeType required_element_count)
         {
-            std::size_t memory_byte_size = element_count * sizeof(T);
-            if (memory_byte_size <= buffer_byte_size_)
+            SizeType memory_byte_size = CalculateByteSize(required_element_count);
+            if (memory_byte_size <= memory_byte_size)
             {
-                return up_buffer_.get();
+                return p_buffer_;
             }
             else
             {
-                ExpandAndRetain(element_count, memory_byte_size);
-                return up_buffer_.get();
+                ExpandAndRetain(required_element_count);
+                return p_buffer_;
             }
         }
-        char* ToWriteAllByByteSize(std::size_t memory_byte_size)
+        Pointer ToWriteAllByByteSize(SizeType required_byte_size)
         {
-            if (memory_byte_size <= buffer_byte_size_)
+            if (required_byte_size <= CalculateByteSize(element_count_))
             {
-                return up_buffer_.get();
+                return p_buffer_;
             }
             else
             {
-                std::size_t element_count = memory_byte_size / sizeof(T);
-                ExpandAndDiscard(memory_byte_size, element_count);
-                return up_buffer_.get();
+                SizeType required_element_count = CalculateElementCount(required_byte_size);
+                ExpandAndDiscard(required_element_count);
+                return p_buffer_;
             }
         }
-        char* ToWriteAllByElementCount(std::size_t element_count)
+        Pointer ToWriteAllByElementCount(SizeType required_element_count)
         {
-            std::size_t memory_byte_size = element_count * sizeof(T);
-            if (memory_byte_size <= buffer_byte_size_)
+            SizeType memory_byte_size = CalculateByteSize(required_element_count);
+            if (memory_byte_size <= CalculateByteSize(element_count_))
             {
-                return up_buffer_.get();
+                return p_buffer_;
             }
             else
             {
-                ExpandAndDiscard(memory_byte_size, element_count);
-                return up_buffer_.get();
+                ExpandAndDiscard(required_element_count);
+                return p_buffer_;
             }
         }
-
-        const char* ToRead() const noexcept
+        ConstPointer ToRead() const noexcept
         {
-            return up_buffer_.get();
-        }
-        void ResetMemory() noexcept
-        {
-            memset(up_buffer_.get(), 0, buffer_byte_size_);
+            return p_buffer_;
         }
 
     private:
-        std::unique_ptr<T[]> up_buffer_;
-        std::size_t buffer_byte_size_;
+        Pointer p_buffer_;
+        SizeType element_count_;
+        DUSK_NO_UNIQUE_ADDRESS_ATTRIBUTE
+        Allocator allocator_;
     };
 }
