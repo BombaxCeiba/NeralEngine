@@ -60,6 +60,8 @@ namespace dusk
     public:
         static_assert(std::is_default_constructible<T>{},
                       "T is not default constructible!");
+        static_assert(std::is_move_assignable<T>{},
+                      "T must be move assignable!");
         using AllocatorTraits = std::allocator_traits<Allocator>;
         using Pointer = AllocatorTraits::pointer;
         using ConstPointer = AllocatorTraits::const_pointer;
@@ -92,6 +94,7 @@ namespace dusk
             {
                 DestoryElements(allocator_, p_buffer_, counter);
                 AllocatorTraits::deallocate(allocator_, p_buffer_, element_count_);
+                throw;
             }
         }
         ~DynamicBuffer()
@@ -110,36 +113,32 @@ namespace dusk
         DynamicBuffer& operator=(DynamicBuffer&&) = default;
 
     private:
-        void ResetMemory() noexcept
-        {
-            memset(p_buffer_, 0, CalculateByteSize(element_count_));
-        }
-        void ResetMemory(void* start, SizeType size) noexcept
-        {
-            memset(start, 0, sizeof(T) * size);
-        }
         void ExpandAndRetain(SizeType element_count)
         {
             Pointer p_new_buffer = AllocatorTraits::allocate(allocator_, element_count);
 
-            auto first = p_buffer_;
-            auto destination = p_new_buffer;
-            ::memmove(destination, first, sizeof(T) * element_count_);
-            element_count_ = element_count;
-            //初始化多余内存
-            SizeType expand_count = element_count - element_count_;
-            memset(std::next(p_new_buffer + expand_size), 0, sizeof(T) * expand_count);
-
+            std::move(p_buffer_, std::next(p_buffer, element_count_), p_new_buffer);
             DestoryElements(allocator_, p_buffer_, element_count_);
             AllocatorTraits::deallocate(allocator_, p_buffer_, element_count_);
+
+            //初始化多余内存
+            SizeType expand_count = element_count - element_count_;
+            element_count_ = element_count;
+            ConstructElements(std::next(p_new_buffer, expand_size), p_buffer_, element_count_);
+
+            p_buffer_ = std::move(p_new_buffer);
         }
         void ExpandAndDiscard(SizeType element_count)
         {
+            Pointer p_new_buffer_ = AllocatorTraits::allocate(allocator_, element_count_);
+
             DestoryElements(allocator_, p_buffer_, element_count_);
             AllocatorTraits::deallocate(allocator_, p_buffer_, element_count_);
-            p_buffer_ = AllocatorTraits::allocate(allocator_, element_count_);
+
             element_count_ = element_count;
-            ResetMemory();
+            p_buffer_ = std::move(p_new_buffer);
+
+            ConstructElements(allocator_, p_buffer_, element_count_);
         }
         inline static SizeType CalculateElementCount(SizeType buffer_byte_size) noexcept
         {
@@ -149,7 +148,7 @@ namespace dusk
         {
             return element_count * sizeof(T);
         }
-        inline static void ConstructElements(Allocator allocator, Pointer p_buffer, SizeType element_count) noexcept
+        inline static void ConstructElements(Allocator allocator, Pointer p_buffer, SizeType element_count)
         {
             SizeType counter = 0;
             try
@@ -164,8 +163,28 @@ namespace dusk
             {
                 DestoryElements(allocator, p_buffer, counter);
                 AllocatorTraits::deallocate(allocator, p_buffer, element_count);
+                throw;
             }
         }
+        inline static void MoveElements(Allocator allocator, Pointer p_destination, Pointer p_source, SizeType element_count)
+        {
+            SizeType counter = 0;
+            try
+            {
+                for (; counter < element_count; ++counter)
+                {
+                    AllocatorTraits::construct(allocator, p_buffer);
+                    std::advance(p_buffer, 1);
+                }
+            }
+            catch (...)
+            {
+                DestoryElements(allocator, p_buffer, counter);
+                AllocatorTraits::deallocate(allocator, p_buffer, element_count);
+                throw;
+            }
+        }
+
         inline static void DestoryElements(Allocator allocator, Pointer p_buffer, SizeType element_count) noexcept(noexcept(~T()))
         {
             Pointer p_buffer_it = p_buffer + element_count;
@@ -180,7 +199,7 @@ namespace dusk
         void ResetBuffer() noexcept(noexcept(~T()))
         {
             DestoryElements(allocator_, p_buffer_, element_count_);
-            ResetMemory();
+            ConstructElements(allocator_, p_buffer_, element_count_);
         }
         Pointer ToWriteUnsafe() noexcept
         {
