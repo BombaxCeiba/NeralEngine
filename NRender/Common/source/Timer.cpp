@@ -44,6 +44,11 @@ namespace dusk
         start_time_ = end_time;
     }
 
+    void Timer::Continue()
+    {
+        start_time_ = GetCurrentTime();
+    }
+
     void Timer::End()
     {
         auto end_time = GetCurrentTime();
@@ -68,7 +73,12 @@ namespace dusk
 
     double Timer::GetMillisecondsDuration()
     {
-        return static_cast<double>(duration_.QuadPart * 1000000) / static_cast<double>(BufferedFrequency::GetFrequency().QuadPart);
+        return static_cast<double>(duration_.QuadPart * 1e3) / static_cast<double>(BufferedFrequency::GetFrequency().QuadPart);
+    }
+
+    double Timer::GetSecondsDuration()
+    {
+        return static_cast<double>(duration_.QuadPart) / static_cast<double>(BufferedFrequency::GetFrequency().QuadPart);
     }
 
     TimerGuard::TimerGuard(Timer& timer) : ref_timer_{timer}

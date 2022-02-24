@@ -48,7 +48,6 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     set(CMAKE_CXX_FLAGS "/MP /source-charset:utf-8 /Zc:__cplusplus ${CMAKE_CXX_FLAGS}")
 endif()
 
-add_definitions(-D_UNICODE)
 add_definitions(-DUNICODE)
 if(CMAKE_BUILD_TYPE MATCHES "Debug")
     add_definitions(-DDEBUG)
@@ -61,22 +60,6 @@ endif()
 
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_C_VISIBILITY_PRESET hidden)
-
-include_directories(${PROJECT_SOURCE_DIR}/NRender/Common/include/)
-include_directories(${PROJECT_SOURCE_DIR}/NRender/)
-
-aux_source_directory(NRender/Common/source SOURCE_FILES)
-aux_source_directory(NRender/D3D12Render SOURCE_FILES)
-aux_source_directory(NRender/SoftRender SOURCE_FILES)
-aux_source_directory(NRender/WindowFramework/source SOURCE_FILES)
-message("----Those files are now in project:\n----${SOURCE_FILES}")
-
-set(RELATIVE_LIBS "Gdiplus")
-List(APPEND RELATIVE_LIBS "d3d12")
-List(APPEND RELATIVE_LIBS "dxgi")
-List(APPEND RELATIVE_LIBS "d3dcompiler")
-
-add_subdirectory(Test)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${PROJECT_SOURCE_DIR}/bin/Debug)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${PROJECT_SOURCE_DIR}/lib/Debug)
@@ -94,13 +77,4 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL ${PROJECT_SOURCE_DIR}/bin/MinSizeR
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_MINSIZEREL ${PROJECT_SOURCE_DIR}/lib/MinSizeRel)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_MINSIZEREL ${PROJECT_SOURCE_DIR}/bin/MinSizeRel)
 
-macro(create_test TEST_NAME)
-    add_executable(${TEST_NAME} "Test/${TEST_NAME}.cpp" ${SOURCE_FILES})
-    target_link_libraries(${TEST_NAME} PRIVATE ${RELATIVE_LIBS})
-    add_test(NAME "${TEST_NAME}_CTest" COMMAND ${TEST_NAME})
-    message("----create test:${TEST_NAME}")
-endmacro()
-
-aux_source_directory(NRender SOURCE_FILES)
-add_executable(${PROJECT_NAME} ${SOURCE_FILES})
-target_link_libraries(${PROJECT_NAME} PRIVATE ${RELATIVE_LIBS})
+add_subdirectory(NRender)

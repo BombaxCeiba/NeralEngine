@@ -39,6 +39,7 @@ namespace dusk
         auto GetRawDuration()
             -> decltype(LARGE_INTEGER::QuadPart);
         double GetMillisecondsDuration();
+        double GetSecondsDuration();
     };
 
     class TimerGuard

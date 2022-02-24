@@ -8,7 +8,6 @@
  */
 #pragma once
 #include <type_traits>
-#include <algorithm>
 #include <memory>
 #include <utility>
 
@@ -54,14 +53,24 @@ namespace dusk
         memset(p_memory_to_set_zero, 0, sizeof(MemoryType) * element_length);
     }
 
+    template <typename Allocator, typename It>
+    inline void DestroyRange(Allocator allocator, It first, It last) noexcept
+    {
+        while (first != last)
+        {
+            std::allocator_traits<Allocator>::destroy(allocator, first);
+            std::advance(first, 1);
+        }
+    }
+
     template <typename T, typename Allocator = std::allocator<T>>
     class DynamicBuffer
     {
     public:
         static_assert(std::is_default_constructible<T>{},
                       "T is not default constructible!");
-        static_assert(std::is_move_assignable<T>{},
-                      "T must be move assignable!");
+        static_assert(std::is_nothrow_move_constructible<T>{},
+                      "T must be nothrow move constructible!");
         using AllocatorTraits = std::allocator_traits<Allocator>;
         using Pointer = AllocatorTraits::pointer;
         using ConstPointer = AllocatorTraits::const_pointer;
@@ -77,78 +86,99 @@ namespace dusk
         DynamicBuffer(InputIt first, InputIt last, Allocator allocator = {})
             : element_count_{std::distance(first, last)}, allocator_{allocator}
         {
-            Pointer p_destination = AllocatorTraits::allocate(allocator, element_count_);
-            p_buffer_ = p_destination;
-            SizeType counter = 0;
+            Pointer p_destination = AllocatorTraits::allocate(allocator_, element_count_);
+            InputIt current = first;
             try
             {
-                while (first != last)
+                while (current != last)
                 {
-                    *p_destination = *first;
-                    std::advance(p_destination);
-                    std::advance(first);
-                    counter++;
+                    *p_destination = *current;
+                    std::advance(p_destination, 1);
+                    std::advance(current, 1);
                 }
             }
             catch (...)
             {
-                DestoryElements(allocator_, p_buffer_, counter);
+                dusk::DestroyRange(allocator_, first, current);
                 AllocatorTraits::deallocate(allocator_, p_buffer_, element_count_);
                 throw;
             }
+            p_buffer_ = std::move(p_destination);
         }
         ~DynamicBuffer()
         {
-            DestoryElements(allocator_, p_buffer_, element_count_);
+            DestroyElements(allocator_, p_buffer_, element_count_);
             AllocatorTraits::deallocate(allocator_, p_buffer_, element_count_);
         }
         DynamicBuffer(const DynamicBuffer&) = delete;
-        DynamicBuffer& operator=(const DynamicBuffer&) = delete;
+        DynamicBuffer operator=(const DynamicBuffer&) = delete;
         DynamicBuffer Clone() const
         {
             return {p_buffer_, std::next(p_buffer_, element_count_), allocator_};
         }
 
         DynamicBuffer(DynamicBuffer&&) = default;
-        DynamicBuffer& operator=(DynamicBuffer&&) = default;
+        DynamicBuffer operator=(DynamicBuffer&& other)
+        {
+            return {std::forward<DynamicBuffer>(other)};
+        }
 
     private:
-        void ExpandAndRetain(SizeType element_count)
+        void ExpandAndRetain(SizeType new_element_count)
         {
-            Pointer p_new_buffer = AllocatorTraits::allocate(allocator_, element_count);
+            Pointer p_new_buffer = AllocatorTraits::allocate(allocator_, new_element_count);
 
-            std::move(p_buffer_, std::next(p_buffer, element_count_), p_new_buffer);
-            DestoryElements(allocator_, p_buffer_, element_count_);
+            auto first = p_buffer_;
+            auto last = std::next(p_buffer_, element_count_);
+            Pointer p_current = p_new_buffer;
+            try
+            {
+                while (first != last)
+                {
+                    AllocatorTraits::construct(allocator_, p_current, std::move(*first));
+                    std::advance(first, 1);
+                    std::advance(p_current, 1);
+                }
+            }
+            catch (...)
+            {
+                dusk::DestroyRange(allocator_, p_new_buffer, first);
+                AllocatorTraits::deallocate(allocator_, p_new_buffer, new_element_count);
+                throw;
+            }
+
+            DestroyElements(allocator_, p_buffer_, element_count_);
             AllocatorTraits::deallocate(allocator_, p_buffer_, element_count_);
 
             //初始化多余内存
-            SizeType expand_count = element_count - element_count_;
-            element_count_ = element_count;
-            ConstructElements(std::next(p_new_buffer, expand_size), p_buffer_, element_count_);
+            SizeType expand_count = new_element_count - element_count_;
+            Pointer construct_start_from = std::next(p_new_buffer, element_count_);
+            element_count_ = new_element_count;
+            ConstructElements(allocator_, construct_start_from, expand_count);
 
             p_buffer_ = std::move(p_new_buffer);
         }
-        void ExpandAndDiscard(SizeType element_count)
+        void ExpandAndDiscard(SizeType new_element_count)
         {
-            Pointer p_new_buffer_ = AllocatorTraits::allocate(allocator_, element_count_);
+            Pointer p_new_buffer = AllocatorTraits::allocate(allocator_, new_element_count);
 
-            DestoryElements(allocator_, p_buffer_, element_count_);
+            DestroyElements(allocator_, p_buffer_, element_count_);
             AllocatorTraits::deallocate(allocator_, p_buffer_, element_count_);
 
-            element_count_ = element_count;
+            element_count_ = new_element_count;
             p_buffer_ = std::move(p_new_buffer);
 
             ConstructElements(allocator_, p_buffer_, element_count_);
         }
-        inline static SizeType CalculateElementCount(SizeType buffer_byte_size) noexcept
+        static SizeType CalculateElementCount(SizeType buffer_byte_size) noexcept
         {
             return buffer_byte_size / sizeof(T);
         }
-        inline static SizeType CalculateByteSize(SizeType element_count) noexcept
+        static SizeType CalculateByteSize(SizeType element_count) noexcept
         {
             return element_count * sizeof(T);
         }
-        inline static void ConstructElements(Allocator allocator, Pointer p_buffer, SizeType element_count)
+        static void ConstructElements(Allocator allocator, Pointer p_buffer, SizeType element_count)
         {
             SizeType counter = 0;
             try
@@ -161,44 +191,25 @@ namespace dusk
             }
             catch (...)
             {
-                DestoryElements(allocator, p_buffer, counter);
-                AllocatorTraits::deallocate(allocator, p_buffer, element_count);
-                throw;
-            }
-        }
-        inline static void MoveElements(Allocator allocator, Pointer p_destination, Pointer p_source, SizeType element_count)
-        {
-            SizeType counter = 0;
-            try
-            {
-                for (; counter < element_count; ++counter)
-                {
-                    AllocatorTraits::construct(allocator, p_buffer);
-                    std::advance(p_buffer, 1);
-                }
-            }
-            catch (...)
-            {
-                DestoryElements(allocator, p_buffer, counter);
+                DestroyElements(allocator, p_buffer, counter);
                 AllocatorTraits::deallocate(allocator, p_buffer, element_count);
                 throw;
             }
         }
 
-        inline static void DestoryElements(Allocator allocator, Pointer p_buffer, SizeType element_count) noexcept(noexcept(~T()))
+        static void DestroyElements(Allocator allocator, Pointer p_buffer, SizeType element_count)
         {
-            Pointer p_buffer_it = p_buffer + element_count;
             for (SizeType i = 0; i < element_count; ++i)
             {
-                AllocatorTraits::destroy(allocator, p_buffer_it);
-                std::advance(p_buffer_it, -1);
+                AllocatorTraits::destroy(allocator, p_buffer);
+                std::advance(p_buffer, 1);
             }
         }
 
     public:
-        void ResetBuffer() noexcept(noexcept(~T()))
+        void ResetBuffer()
         {
-            DestoryElements(allocator_, p_buffer_, element_count_);
+            DestroyElements(allocator_, p_buffer_, element_count_);
             ConstructElements(allocator_, p_buffer_, element_count_);
         }
         Pointer ToWriteUnsafe() noexcept
@@ -220,8 +231,7 @@ namespace dusk
         }
         Pointer ToWriteByElementCount(SizeType required_element_count)
         {
-            SizeType memory_byte_size = CalculateByteSize(required_element_count);
-            if (memory_byte_size <= memory_byte_size)
+            if (required_element_count <= element_count_)
             {
                 return p_buffer_;
             }
@@ -246,8 +256,7 @@ namespace dusk
         }
         Pointer ToWriteAllByElementCount(SizeType required_element_count)
         {
-            SizeType memory_byte_size = CalculateByteSize(required_element_count);
-            if (memory_byte_size <= CalculateByteSize(element_count_))
+            if (required_element_count <= element_count_)
             {
                 return p_buffer_;
             }

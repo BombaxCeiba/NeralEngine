@@ -4,7 +4,7 @@
  * @FilePath: \NRender\Test\LoggerTest.cpp
  * @Copyright (c) 2021 Dusk. All rights reserved.
  */
-#include "TestMain.hpp"
+#include "TestMain.h"
 #include "Logger.h"
 
 TEST(Log, TryToLog)

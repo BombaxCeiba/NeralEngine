@@ -6,7 +6,7 @@
  */
 #include <string>
 #include <iostream>
-#include "TestMain.hpp"
+#include "TestMain.h"
 #include "StaticString.hpp"
 
 TEST(StaticString, StaticStringContentTest)
