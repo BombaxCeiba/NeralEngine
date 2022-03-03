@@ -9,7 +9,7 @@
 #include <algorithm>
 #include <type_traits>
 #include "TestMain.h"
-#include "Utils.h"
+#include "../include/Utils.h"
 
 namespace
 {

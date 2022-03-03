@@ -7,10 +7,11 @@
 #include <string>
 #include <iostream>
 #include "TestMain.h"
-#include "StaticString.hpp"
+#include "../include/StaticString.hpp"
 
 TEST(StaticString, StaticStringContentTest)
 {
+    std::cout << "__cplusplus: " << __cplusplus << std::endl;
     std::string dynamic_string_1("TestStaticString");
     auto static_string_test_1 = DUSK_MAKE_STATIC_STRING("TestStaticString");
     std::cout << typeid(decltype(static_string_test_1)).name() << std::endl;

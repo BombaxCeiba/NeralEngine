@@ -11,10 +11,10 @@
 #include <d3d12.h>
 #include <sal.h>
 #include <DirectXMath.h>
-#include "DXUtils.h"
-#include "RenderBase.h"
+#include "Common/include/DXUtils.h"
+#include "Common/include/RenderBase.h"
 #include "WindowFramework/include/Window.h"
-#include "Logger.h"
+#include "Common/include/Logger.h"
 
 class D3D12Render : public RenderBase
 {

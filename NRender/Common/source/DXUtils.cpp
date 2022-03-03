@@ -4,7 +4,7 @@
  * @FilePath: \NRender\NRender\Common\source\DXUtils.cpp
  * @Copyright (c) 2021 Dusk. All rights reserved.
  */
-#include "DXUtils.h"
+#include "../include/DXUtils.h"
 
 using namespace dusk::tools;
 

@@ -5,7 +5,7 @@
  * @Copyright (c) 2021 Dusk. All rights reserved.
  */
 #include "TestMain.h"
-#include "Logger.h"
+#include "../include/Logger.h"
 
 TEST(Log, TryToLog)
 {

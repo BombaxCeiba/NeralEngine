@@ -9,8 +9,8 @@
 #include <functional>
 #include <memory>
 #include <Windows.h>
-#include "Event.hpp"
-#include "RenderBase.h"
+#include "Common/include/Event.hpp"
+#include "Common/include/RenderBase.h"
 
 class Window;
 

@@ -1,5 +1,5 @@
 #include "TestMain.h"
-#include "../NRender/Common/include/Vectors.hpp"
+#include "../include/Vectors.hpp"
 #include <sal.h>
 #include <DirectXMath.h>
 

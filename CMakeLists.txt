@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.15)
 
-set(PROJECT_NAME "NRender")
+set(MAIN_PROJECT_NAME "NRender")
 
-project(${PROJECT_NAME})
+project(${MAIN_PROJECT_NAME})
 set(CMAKE_CXX_STANDARD 20)
 
 include(CheckCXXSourceRuns)
@@ -77,4 +77,5 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL ${PROJECT_SOURCE_DIR}/bin/MinSizeR
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_MINSIZEREL ${PROJECT_SOURCE_DIR}/lib/MinSizeRel)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_MINSIZEREL ${PROJECT_SOURCE_DIR}/bin/MinSizeRel)
 
-add_subdirectory(NRender)
+#add_subdirectory(3rdpart)
+add_subdirectory("${MAIN_PROJECT_NAME}")

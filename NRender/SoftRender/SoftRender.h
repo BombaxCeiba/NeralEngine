@@ -15,8 +15,8 @@
 #undef max
 #endif
 
-#include "ObjLoader.hpp"
-#include "../WindowFramework/include/Window.h"
+#include "Common/include/ObjLoader.hpp"
+#include "WindowFramework/include/Window.h"
 
 namespace
 {

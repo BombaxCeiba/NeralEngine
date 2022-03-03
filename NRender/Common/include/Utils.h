@@ -32,23 +32,23 @@ namespace dusk
 {
 
     template <typename T, std::size_t Length>
-    constexpr inline std::size_t GetLength(const T (&data)[Length])
+    constexpr inline std::size_t GetLength(const T (&data)[Length]) noexcept
     {
         return Length;
     }
     template <typename T, typename C, std::size_t Length>
-    constexpr inline std::size_t GetLength(const T (C::*(data))[Length])
+    constexpr inline std::size_t GetLength(const T (C::*(data))[Length]) noexcept
     {
         return Length;
     }
     template <typename T, typename C, std::size_t Length>
-    constexpr inline std::size_t GetLength(T (C::*(data))[Length])
+    constexpr inline std::size_t GetLength(T (C::*(data))[Length]) noexcept
     {
         return Length;
     }
 
     template <typename MemoryType>
-    inline void SetMemoryZero(MemoryType* p_memory_to_set_zero, std::size_t element_length)
+    inline void SetMemoryZero(MemoryType* p_memory_to_set_zero, std::size_t element_length) noexcept
     {
         memset(p_memory_to_set_zero, 0, sizeof(MemoryType) * element_length);
     }
@@ -92,7 +92,7 @@ namespace dusk
             {
                 while (current != last)
                 {
-                    *p_destination = *current;
+                    AllocatorTraits::construct(allocator_, p_destination, *current);
                     std::advance(p_destination, 1);
                     std::advance(current, 1);
                 }
@@ -105,7 +105,7 @@ namespace dusk
             }
             p_buffer_ = std::move(p_destination);
         }
-        ~DynamicBuffer()
+        ~DynamicBuffer() noexcept
         {
             DestroyElements(allocator_, p_buffer_, element_count_);
             AllocatorTraits::deallocate(allocator_, p_buffer_, element_count_);

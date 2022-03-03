@@ -1,0 +1,5 @@
+aux_source_from_directory_to_project("${MAIN_PROJECT_NAME}" ./source)
+get_property(TEST_SOURCE GLOBAL PROPERTY GLOBAL_TEST_MAIN_SOURCE_FILE)
+aux_source_directory(./Test TEST_SOURCE)
+create_gtest_from_files_and_use_specific_directory_as_dependency("${TEST_SOURCE}" ./source "gdiplus")
+append_lib_to_global_property(GLOBAL_DEPENDENT_LIBS "gdiplus")

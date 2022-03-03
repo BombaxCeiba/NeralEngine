@@ -9,7 +9,7 @@
 #include <list>
 #include <memory_resource>
 #include "TestMain.h"
-#include "Event.hpp"
+#include "../include/Event.hpp"
 
 constexpr static std::size_t TEST_TIMES = 2;
 

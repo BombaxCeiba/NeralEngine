@@ -4,7 +4,7 @@
  * @FilePath: \NRender\NRender\Common\source\Timer.cpp
  * @Copyright (c) 2021 Dusk. All rights reserved.
  */
-#include "Timer.h"
+#include "../include/Timer.h"
 
 namespace dusk
 {

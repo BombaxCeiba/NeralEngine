@@ -8,8 +8,8 @@
 #include <d3d12sdklayers.h>
 #endif
 #include "D3D12Render.h"
-#include "Utils.h"
-#include "Win32APIHelper.h"
+#include "Common/include/Utils.h"
+#include "Common/include/Win32APIHelper.h"
 
 using namespace Microsoft::WRL;
 using namespace dusk::tools;
