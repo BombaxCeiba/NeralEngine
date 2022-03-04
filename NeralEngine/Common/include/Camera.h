@@ -1,6 +1,6 @@
 #pragma once
 //***************************************************************************************
-//Camera.h by Dusk_NM02 (c) 2021 All Rights Reserved.
+// Camera.h by Dusk_NM02 (c) 2021 All Rights Reserved.
 //***************************************************************************************
 #include <array>
 #include "Vectors.hpp"
