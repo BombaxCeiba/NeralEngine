@@ -7,7 +7,7 @@
  */
 #include "../include/Win32APIHelper.h"
 
-int dusk::EvaluateWideCharToMultiByteSize(UINT code_page, wchar_t* p_wchar_string, DWORD flags, int wchar_string_length)
+int Neral::EvaluateWideCharToMultiByteSize(UINT code_page, wchar_t* p_wchar_string, DWORD flags, int wchar_string_length)
 {
     return ::WideCharToMultiByte(
         code_page,
@@ -20,10 +20,10 @@ int dusk::EvaluateWideCharToMultiByteSize(UINT code_page, wchar_t* p_wchar_strin
         nullptr);
 }
 
-auto dusk::AllocateWideCharToMultiByteMemory(UINT code_page, wchar_t* p_wchar_string, DWORD flags, int wchar_string_length)
+auto Neral::AllocateWideCharToMultiByteMemory(UINT code_page, wchar_t* p_wchar_string, DWORD flags, int wchar_string_length)
     -> std::unique_ptr<char[]>
 {
-    std::size_t memory_size = ::dusk::EvaluateWideCharToMultiByteSize(code_page, p_wchar_string, flags, wchar_string_length);
+    std::size_t memory_size = ::Neral::EvaluateWideCharToMultiByteSize(code_page, p_wchar_string, flags, wchar_string_length);
     auto result = std::make_unique<char[]>(memory_size);
     memset(result.get(), 0, sizeof(char) * memory_size);
     return result;

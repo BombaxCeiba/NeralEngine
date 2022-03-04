@@ -7,7 +7,7 @@
  */
 #include "../include/Timer.h"
 
-namespace dusk
+namespace Neral
 {
     Timer::BufferedFrequency::BufferedFrequency()
     {

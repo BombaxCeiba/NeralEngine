@@ -10,7 +10,7 @@
 
 #include <type_traits>
 
-namespace dusk
+namespace Neral
 {
     template <class T>
     struct function_first_argument_type;

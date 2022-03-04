@@ -11,7 +11,7 @@
 #include <memory>
 #include <Windows.h>
 
-namespace dusk
+namespace Neral
 {
     constexpr static DWORD EMPTY_FLAG = 0;
 

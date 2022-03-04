@@ -8,13 +8,15 @@
 #include "TestMain.h"
 #include "../include/Logger.h"
 
+NERAL_ENGINE_TEST_NAMESPACE_START
 TEST(Log, TryToLog)
 {
-    dusk::Outputer::Console::StringType test_str{"Test Error Log"};
-    dusk::Log<dusk::Outputer::Console>(&dusk::LogType::Error, test_str);
-    dusk::LogError<dusk::Outputer::Console>(test_str);
-    dusk::LogError<dusk::Outputer::Console>(test_str, test_str);
+    Neral::Outputer::Console::StringType test_str{"Test Error Log"};
+    Neral::Log<Neral::Outputer::Console>(&Neral::LogType::Error, test_str);
+    Neral::LogError<Neral::Outputer::Console>(test_str);
+    Neral::LogError<Neral::Outputer::Console>(test_str, test_str);
 
-    dusk::LogWarning<dusk::Outputer::Console>(test_str);
-    dusk::LogDebug<dusk::Outputer::Console>(test_str);
+    Neral::LogWarning<Neral::Outputer::Console>(test_str);
+    Neral::LogDebug<Neral::Outputer::Console>(test_str);
 }
+NERAL_ENGINE_TEST_NAMESPACE_END

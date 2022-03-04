@@ -10,7 +10,7 @@
 
 #include <Windows.h> //win32 only
 
-namespace dusk
+namespace Neral
 {
     //使用QueryPerformanceCounter实现
     class Timer

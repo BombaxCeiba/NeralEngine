@@ -29,7 +29,7 @@ static_assert(false, "Unsupport!")
 #define DUSK_NO_UNIQUE_ADDRESS_ATTRIBUTE
 #endif //__cplusplus >= 202002L
 
-namespace dusk
+namespace Neral
 {
 
     template <typename T, std::size_t Length>
@@ -100,7 +100,7 @@ namespace dusk
             }
             catch (...)
             {
-                dusk::DestroyRange(allocator_, first, current);
+                Neral::DestroyRange(allocator_, first, current);
                 AllocatorTraits::deallocate(allocator_, p_buffer_, element_count_);
                 throw;
             }
@@ -143,7 +143,7 @@ namespace dusk
             }
             catch (...)
             {
-                dusk::DestroyRange(allocator_, p_new_buffer, first);
+                Neral::DestroyRange(allocator_, p_new_buffer, first);
                 AllocatorTraits::deallocate(allocator_, p_new_buffer, new_element_count);
                 throw;
             }

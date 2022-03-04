@@ -8,5 +8,14 @@
 #ifndef NERAL_ENGINE_PUBLICTESTCOMPONENT_TEST_MAIN_H
 #define NERAL_ENGINE_PUBLICTESTCOMPONENT_TEST_MAIN_H
 
+#define NERAL_ENGINE_TEST_NAMESPACE_START \
+    namespace Neral                       \
+    {                                     \
+        namespace Test                    \
+        {
+#define NERAL_ENGINE_TEST_NAMESPACE_END \
+    }                                   \
+    }
+
 #include <gtest/gtest.h>
 #endif // NERAL_ENGINE_PUBLIC_TEST_COMPONENT_TEST_MAIN_H

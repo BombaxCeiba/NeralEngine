@@ -7,7 +7,7 @@
  */
 #include "../include/DXUtils.h"
 
-using namespace dusk::tools;
+using namespace Neral::tools;
 
 const std::string DXException::before_error_{ "HRESULT: " };
 const std::string DXException::after_error_{ "\nline: " };

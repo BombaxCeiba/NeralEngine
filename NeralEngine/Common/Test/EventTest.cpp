@@ -12,6 +12,8 @@
 #include "TestMain.h"
 #include "../include/Event.hpp"
 
+NERAL_ENGINE_TEST_NAMESPACE_START
+
 constexpr static std::size_t TEST_TIMES = 2;
 
 struct TestEventArgs
@@ -23,9 +25,9 @@ struct TestEventArgs
 };
 
 ////////////////////////////
-//index                0 1//
-//test_results         0 1//
-//test_reverse_results 1 0//
+// index                0 1//
+// test_results         0 1//
+// test_reverse_results 1 0//
 ////////////////////////////
 
 void TestEventFunction1Content(const TestEventArgs& event_args)
@@ -52,16 +54,16 @@ void TestEventFunction2Content(const TestEventArgs& event_args)
     }
 }
 
-ceiba::EventState TestEventFunction1(const TestEventArgs& event_args)
+Ceiba::EventState TestEventFunction1(const TestEventArgs& event_args)
 {
     TestEventFunction1Content(event_args);
-    return ceiba::EventState::Continue;
+    return Ceiba::EventState::Continue;
 }
 
-ceiba::EventState TestEventFunction2(const TestEventArgs& event_args)
+Ceiba::EventState TestEventFunction2(const TestEventArgs& event_args)
 {
     TestEventFunction2Content(event_args);
-    return ceiba::EventState::Continue;
+    return Ceiba::EventState::Continue;
 }
 
 static std::array<std::size_t, TEST_TIMES> test_results;
@@ -87,14 +89,13 @@ void TestEventAfterAddFunction(Event& event)
 TEST(EventTest, DefaultEvent)
 {
     {
-        ceiba::DefaultEvent<const TestEventArgs&> test_event1{};
-        test_event1.AddFunction([](const TestEventArgs& event_args) -> ceiba::EventState
+        Ceiba::DefaultEvent<const TestEventArgs&> test_event1{};
+        test_event1.AddFunction([](const TestEventArgs& event_args) -> Ceiba::EventState
                                 {
                                     EXPECT_EQ(event_args.first, 1);
                                     EXPECT_EQ(event_args.second, 2);
                                     TestEventFunction1Content(event_args);
-                                    return ceiba::EventState::Continue;
-                                });
+                                    return Ceiba::EventState::Continue; });
         test_event1.AddFunction(std::bind(&TestEventFunction2, std::placeholders::_1));
 
         TestEventAfterAddFunction(test_event1);
@@ -102,7 +103,7 @@ TEST(EventTest, DefaultEvent)
 }
 TEST(EventTest, FunctionPointerDefaultEvent)
 {
-    ceiba::DefaultFunctionPointerEvent<const TestEventArgs&> test_event2{};
+    Ceiba::DefaultFunctionPointerEvent<const TestEventArgs&> test_event2{};
     test_event2.AddFunction(&TestEventFunction1);
     test_event2.AddFunction(&TestEventFunction2);
 
@@ -110,21 +111,22 @@ TEST(EventTest, FunctionPointerDefaultEvent)
 }
 TEST(EventTest, CustomEvent)
 {
-    using ListEventFunctionStorageType = ceiba::EventFunctionStorageType<std::function<ceiba::EventState(const TestEventArgs&)>, std::uint32_t>;
-    ceiba::Event<
-        std::function<ceiba::EventState(const TestEventArgs&)>,
+    using ListEventFunctionStorageType = Ceiba::EventFunctionStorageType<std::function<Ceiba::EventState(const TestEventArgs&)>, std::uint32_t>;
+    Ceiba::Event<
+        std::function<Ceiba::EventState(const TestEventArgs&)>,
         std::mutex,
         std::uint32_t,
         std::list<ListEventFunctionStorageType, std::pmr::polymorphic_allocator<ListEventFunctionStorageType>>>
-        test_event3{[](const TestEventArgs& event_args) -> ceiba::EventState
+        test_event3{[](const TestEventArgs& event_args) -> Ceiba::EventState
                     {
                         EXPECT_EQ(event_args.first, 1);
                         EXPECT_EQ(event_args.second, 2);
                         TestEventFunction1Content(event_args);
-                        return ceiba::EventState::Continue;
+                        return Ceiba::EventState::Continue;
                     },
                     std::pmr::polymorphic_allocator<ListEventFunctionStorageType>{}};
     test_event3.AddFunction(std::bind(&TestEventFunction2, std::placeholders::_1));
 
     TestEventAfterAddFunction(test_event3);
 }
+NERAL_ENGINE_TEST_NAMESPACE_END

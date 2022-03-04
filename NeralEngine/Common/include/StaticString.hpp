@@ -11,7 +11,7 @@
 #include <iostream>
 #include <utility>
 
-namespace dusk
+namespace Neral
 {
     template <std::size_t Index, std::size_t Length>
     constexpr char GetChar(const char (&s)[Length])
@@ -65,22 +65,22 @@ namespace dusk
     auto MakeFixStringOld(static_string<Previous...>, static_string<'\0'>, static_string<After>...)
         -> static_string<Previous...>;
 
-#define DUSK_MAKE_CHAR_INDEX(n, str) ::dusk::GetChar<0x##n##0>(str), ::dusk::GetChar<0x##n##1>(str), \
-                                     ::dusk::GetChar<0x##n##2>(str), ::dusk::GetChar<0x##n##3>(str), \
-                                     ::dusk::GetChar<0x##n##4>(str), ::dusk::GetChar<0x##n##5>(str), \
-                                     ::dusk::GetChar<0x##n##6>(str), ::dusk::GetChar<0x##n##7>(str), \
-                                     ::dusk::GetChar<0x##n##8>(str), ::dusk::GetChar<0x##n##9>(str), \
-                                     ::dusk::GetChar<0x##n##a>(str), ::dusk::GetChar<0x##n##b>(str), \
-                                     ::dusk::GetChar<0x##n##c>(str), ::dusk::GetChar<0x##n##d>(str), \
-                                     ::dusk::GetChar<0x##n##e>(str), ::dusk::GetChar<0x##n##f>(str)
-#define DUSK_MAKE_CHAR_INDEX_64_LOW(str) DUSK_MAKE_CHAR_INDEX(0, str), DUSK_MAKE_CHAR_INDEX(1, str), \
-                                         DUSK_MAKE_CHAR_INDEX(2, str), DUSK_MAKE_CHAR_INDEX(3, str)
-#define DUSK_MAKE_CHAR_INDEX_64_HEIGHT(str) DUSK_MAKE_CHAR_INDEX(4, str), DUSK_MAKE_CHAR_INDEX(5, str), \
-                                            DUSK_MAKE_CHAR_INDEX(6, str), DUSK_MAKE_CHAR_INDEX(7, str)
-#define DUSK_MAKE_CHAR_INDEX_SEQUENCE(str) DUSK_MAKE_CHAR_INDEX_64_LOW(str), DUSK_MAKE_CHAR_INDEX_64_HEIGHT(str)
+#define NERAL_MAKE_CHAR_INDEX(n, str) ::Neral::GetChar<0x##n##0>(str), ::Neral::GetChar<0x##n##1>(str), \
+                                     ::Neral::GetChar<0x##n##2>(str), ::Neral::GetChar<0x##n##3>(str), \
+                                     ::Neral::GetChar<0x##n##4>(str), ::Neral::GetChar<0x##n##5>(str), \
+                                     ::Neral::GetChar<0x##n##6>(str), ::Neral::GetChar<0x##n##7>(str), \
+                                     ::Neral::GetChar<0x##n##8>(str), ::Neral::GetChar<0x##n##9>(str), \
+                                     ::Neral::GetChar<0x##n##a>(str), ::Neral::GetChar<0x##n##b>(str), \
+                                     ::Neral::GetChar<0x##n##c>(str), ::Neral::GetChar<0x##n##d>(str), \
+                                     ::Neral::GetChar<0x##n##e>(str), ::Neral::GetChar<0x##n##f>(str)
+#define NERAL_MAKE_CHAR_INDEX_64_LOW(str) NERAL_MAKE_CHAR_INDEX(0, str), NERAL_MAKE_CHAR_INDEX(1, str), \
+                                         NERAL_MAKE_CHAR_INDEX(2, str), NERAL_MAKE_CHAR_INDEX(3, str)
+#define NERAL_MAKE_CHAR_INDEX_64_HEIGHT(str) NERAL_MAKE_CHAR_INDEX(4, str), NERAL_MAKE_CHAR_INDEX(5, str), \
+                                            NERAL_MAKE_CHAR_INDEX(6, str), NERAL_MAKE_CHAR_INDEX(7, str)
+#define NERAL_MAKE_CHAR_INDEX_SEQUENCE(str) NERAL_MAKE_CHAR_INDEX_64_LOW(str), NERAL_MAKE_CHAR_INDEX_64_HEIGHT(str)
 
-#define DUSK_MAKE_STATIC_STRING_TYPE(str) decltype(::dusk::AutoEndString(::dusk::static_string<DUSK_MAKE_CHAR_INDEX_SEQUENCE(str)>{}))
-#define DUSK_MAKE_STATIC_STRING(str) \
-    DUSK_MAKE_STATIC_STRING_TYPE(str) {}
-} // namespace dusk
+#define NERAL_MAKE_STATIC_STRING_TYPE(str) decltype(::Neral::AutoEndString(::Neral::static_string<NERAL_MAKE_CHAR_INDEX_SEQUENCE(str)>{}))
+#define NERAL_MAKE_STATIC_STRING(str) \
+    NERAL_MAKE_STATIC_STRING_TYPE(str) {}
+} // namespace Neral
 #endif // NERAL_ENGINE_COMMON_STATICSTRING_H

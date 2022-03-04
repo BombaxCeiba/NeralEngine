@@ -18,7 +18,7 @@
 #include <Windows.h>
 #include "DuskTMP.hpp"
 
-namespace ceiba
+namespace Ceiba
 {
     enum class EventState
     {
@@ -132,7 +132,7 @@ namespace ceiba
     {
     };
     template <class T>
-    struct check_if_allocator_type_exist<T, dusk::void_t<typename T::value_type>>
+    struct check_if_allocator_type_exist<T, Neral::void_t<typename T::value_type>>
         : public std::true_type
     {
     };
@@ -350,6 +350,6 @@ namespace ceiba
     template <typename... Args>
     using DefaultFunctionPointerEvent = Event<EventState (*)(Args...), std::mutex, std::uint16_t, std::vector<EventFunctionStorageType<EventState (*)(Args...), std::uint16_t>>>;
 }
-namespace WindowFramework = ceiba;
+namespace WindowFramework = Ceiba;
 
 #endif // NERAL_ENGINE_COMMON_EVENT_HPP

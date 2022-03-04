@@ -19,7 +19,7 @@
         return log_type_tip_string;                                                        \
     }
 
-namespace dusk
+namespace Neral
 {
     namespace LogType
     {
@@ -79,7 +79,7 @@ namespace dusk
     inline void LogError(OutputTypes&&... contents)
     {
         Log<Outputer>(
-            std::forward<LogType>(&::dusk::LogType::Error),
+            std::forward<LogType>(&::Neral::LogType::Error),
             std::forward<OutputTypes>(contents)...);
     }
 
@@ -87,14 +87,14 @@ namespace dusk
     inline void LogWarning(OutputTypes&&... contents)
     {
         Log<Outputer>(
-            std::forward<LogType>(&::dusk::LogType::Warning),
+            std::forward<LogType>(&::Neral::LogType::Warning),
             std::forward<OutputTypes>(contents)...);
     }
     template <class Outputer, class... OutputTypes, class String = typename Outputer::StringType, class LogType = String (*)(String)>
     inline void LogDebug(OutputTypes&&... contents)
     {
         Log<Outputer>(
-            std::forward<LogType>(&::dusk::LogType::Debug),
+            std::forward<LogType>(&::Neral::LogType::Debug),
             std::forward<OutputTypes>(contents)...);
     }
 }

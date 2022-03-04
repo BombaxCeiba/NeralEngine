@@ -12,7 +12,7 @@
 #include <source_location>
 #include <wrl/client.h>
 
-namespace dusk
+namespace Neral
 {
     namespace tools
     {

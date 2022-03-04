@@ -4,12 +4,13 @@
  * @last modified by:   Dusk
  * @last modified time: 2022-03-04 19:07:21
  * @copyright Copyright (c) 2022 Dusk.
-*/
+ */
 #include "TestMain.h"
 #include "../include/Vectors.hpp"
 #include <sal.h>
 #include <DirectXMath.h>
 
+NERAL_ENGINE_TEST_NAMESPACE_START
 TEST(Vectors, VectorTest)
 {
     DirectX::XMMATRIX l_matrix(
@@ -26,7 +27,7 @@ TEST(Vectors, VectorTest)
 
     Vector4fAlignas16 a{1.0f, 2.0f, 3.0f, 4.0f};
     Vector4fAlignas16 b{2.3f, 2.3f, 5.5f, 2.3f};
-    auto cross_result = a.Cross3(b); //Pass
+    auto cross_result = a.Cross3(b); // Pass
     Vector4fAlignas16 target_result{3.3f, 4.3f, 8.5f, 6.3f};
     auto z = a.y();
     auto c = a + b;
@@ -54,8 +55,9 @@ TEST(Vectors, VectorTest)
     EXPECT_EQ(result_vec_calcuate, *(presult_vec));
     auto e{m->GetColumn<1>()};
     auto f{m->GetColumn(0)};
-    EXPECT_EQ(e,b);
-    EXPECT_EQ(f,a);
+    EXPECT_EQ(e, b);
+    EXPECT_EQ(f, a);
     a.SetZ(0.289450f);
     a += b;
 }
+NERAL_ENGINE_TEST_NAMESPACE_END
