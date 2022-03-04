@@ -1,12 +1,13 @@
-/***
- * @Author: Dusk
- * @Date: 2021-09-06 13:59:48
- * @LastEditTime: 2021-12-03 11:11:32
- * @LastEditors: Dusk
- * @FilePath: \NRender\NRender\WindowFramework\include\App.h
- * @Copyright (c) 2021 Dusk. All rights reserved.
+/**
+ * @author: Dusk
+ * @date: 2021-09-06 13:59:48
+ * @last modified by:   Dusk
+ * @last modified time: 2022-03-04 19:31:14
+ * @copyright Copyright (c) 2022 Dusk.
  */
-#pragma once
+#ifndef CEIBA_APP_H
+#define CEIBA_APP_H
+
 #include <memory>
 #include <unordered_map>
 #include <Windows.h>
@@ -31,11 +32,12 @@ public:
     void DeleteWindow(Window& p_window);
     bool AddWindow(UniqueWindowPointer up_window);
     bool AddAsMainWindow(UniqueWindowPointer up_window);
-    auto GetWindow(const std::wstring& window_name)->Window&;
-    auto GetWindow(const std::wstring& window_name)const->const Window&;
+    auto GetWindow(const std::wstring& window_name) -> Window&;
+    auto GetWindow(const std::wstring& window_name) const -> const Window&;
     int32_t Run();
     HWND main_window_;
     QuitMode quit_mode_ = QuitMode::WhenAllWindowClosed;
+
 private:
     App();
     ~App();
@@ -46,6 +48,8 @@ private:
     static App instance;
 };
 
-inline std::function<void(Window&)> g_window_destructor = [](Window& window_to_delete) {
+inline std::function<void(Window&)> g_window_destructor = [](Window& window_to_delete)
+{
     App::GetInstance().DeleteWindow(window_to_delete);
 };
+#endif // CEIBA_APP_H

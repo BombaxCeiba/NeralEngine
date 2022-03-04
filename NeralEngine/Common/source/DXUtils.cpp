@@ -1,8 +1,9 @@
-/***
- * @Author: Dusk
- * @Date: 2021-12-01 19:00:12
- * @FilePath: \NRender\NRender\Common\source\DXUtils.cpp
- * @Copyright (c) 2021 Dusk. All rights reserved.
+/**
+ * @author: Dusk
+ * @date: 2021-12-01 19:00:12
+ * @last modified by:   Dusk
+ * @last modified time: 2022-03-04 19:12:38
+ * @copyright Copyright (c) 2022 Dusk.
  */
 #include "../include/DXUtils.h"
 

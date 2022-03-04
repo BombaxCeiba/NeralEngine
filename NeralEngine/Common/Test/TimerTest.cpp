@@ -1,8 +1,9 @@
-/***
- * @Author: Dusk
- * @Date: 2022-02-23 11:15:02
- * @FilePath: \NRender\NRender\Test\TimerTest.cpp
- * @Copyright (c) 2021 Dusk. All rights reserved.
+/**
+ * @author: Dusk
+ * @date: 2022-02-23 11:15:02
+ * @last modified by:   Dusk
+ * @last modified time: 2022-03-04 19:08:16
+ * @copyright Copyright (c) 2022 Dusk.
  */
 #include <thread>
 #include <iostream>

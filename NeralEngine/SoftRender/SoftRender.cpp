@@ -1,3 +1,10 @@
+/**
+ * @author: Dusk
+ * @date: 2022-03-04 19:24:15
+ * @last modified by:   Dusk
+ * @last modified time: 2022-03-04 19:24:15
+ * @copyright Copyright (c) 2022 Dusk.
+*/
 #include "SoftRender.h"
 
 SoftRender::SoftRender(Window& window, const Vector4fAlignas16& position, const Vector4fAlignas16& gaze_direction, const Vector4fAlignas16& up_direction)

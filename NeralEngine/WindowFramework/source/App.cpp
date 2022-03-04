@@ -1,3 +1,10 @@
+/**
+ * @author: Dusk
+ * @date: 2021-09-06 13:59:48
+ * @last modified by:   Dusk
+ * @last modified time: 2022-03-04 19:34:17
+ * @copyright Copyright (c) 2022 Dusk.
+ */
 #include "../include/App.h"
 
 App App::instance{};

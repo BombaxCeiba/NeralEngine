@@ -1,10 +1,13 @@
-/***
- * @Author: Dusk
- * @Date: 2021-11-22 13:55:59
- * @FilePath: \NRender\NRender\D3D12Render\D3D12Render.h
- * @Copyright (c) 2021 Dusk. All rights reserved.
+/**
+ * @author: Dusk
+ * @date: 2021-11-22 13:55:59
+ * @last modified by:   Dusk
+ * @last modified time: 2022-03-04 18:58:44
+ * @copyright Copyright (c) 2022 Dusk.
  */
-#pragma once
+#ifndef NERAL_ENGINE_D3D12RENDER_D3D12RENDER_H
+#define NERAL_ENGINE_D3D12RENDER_D3D12RENDER_H
+
 #include <vector>
 #include <wrl/client.h>
 #include <dxgi1_4.h>
@@ -63,3 +66,4 @@ private:
     void WaitForPreviousFrameRending();
     ceiba::EventState OnResize(const ceiba::SizeChangedEventArgs& event_args);
 };
+#endif // NERAL_ENGINE_D3D12RENDER_D3D12RENDER_H

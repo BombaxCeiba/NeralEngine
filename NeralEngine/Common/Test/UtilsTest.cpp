@@ -1,8 +1,9 @@
-/***
- * @Author: Dusk
- * @Date: 2022-02-22 11:24:48
- * @FilePath: \NRender\Test\UtilsTest.cpp
- * @Copyright (c) 2021 Dusk. All rights reserved.
+/**
+ * @author: Dusk
+ * @date: 2022-02-22 11:24:48
+ * @last modified by:   Dusk
+ * @last modified time: 2022-03-04 19:07:47
+ * @copyright Copyright (c) 2022 Dusk.
  */
 #include <unordered_map>
 #include <string>

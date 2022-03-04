@@ -1,8 +1,9 @@
-/***
- * @Author: Dusk
- * @Date: 2021-12-01 22:07:36
- * @FilePath: \NRender\NRender\D3D12Render\D3D12Render.cpp
- * @Copyright (c) 2021 Dusk. All rights reserved.
+/**
+ * @author: Dusk
+ * @date: 2021-12-01 22:07:36
+ * @last modified by:   Dusk
+ * @last modified time: 2022-03-04 19:03:18
+ * @copyright Copyright (c) 2022 Dusk.
  */
 #if defined(DEBUG) || defined(_DEBUG)
 #include <d3d12sdklayers.h>

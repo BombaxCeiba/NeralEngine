@@ -1,10 +1,13 @@
-/***
- * @Author: Dusk
- * @Date: 2022-01-23 10:40:08
- * @FilePath: \NRender\NRender\Common\include\Timer.h
- * @Copyright (c) 2021 Dusk. All rights reserved.
+/**
+ * @author: Dusk
+ * @date: 2022-01-23 10:40:08
+ * @last modified by:   Dusk
+ * @last modified time: 2022-03-04 19:14:30
+ * @copyright Copyright (c) 2022 Dusk.
  */
-#pragma once
+#ifndef NERAL_ENGINE_COMMON_TIMER_H
+#define NERAL_ENGINE_COMMON_TIMER_H
+
 #include <Windows.h> //win32 only
 
 namespace dusk
@@ -58,3 +61,4 @@ namespace dusk
         ~TimerGuard();
     };
 }
+#endif // NERAL_ENGINE_COMMON_TIMER_H

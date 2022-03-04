@@ -1,12 +1,13 @@
-/***
- * @Author: Dusk
- * @Date: 2021-12-03 17:59:24
- * @LastEditTime: 2021-12-03 17:59:24
- * @LastEditors: Dusk
- * @FilePath: \NRender\NRender\Common\include\Utils.h
- * @Copyright (c) 2021 Dusk. All rights reserved.
+/**
+ * @author: Dusk
+ * @date: 2021-12-03 17:59:24
+ * @last modified by:   Dusk
+ * @last modified time: 2022-03-04 19:13:50
+ * @copyright Copyright (c) 2022 Dusk.
  */
-#pragma once
+#ifndef NERAL_ENGINE_COMMON_UTILS_H
+#define NERAL_ENGINE_COMMON_UTILS_H
+
 #include <type_traits>
 #include <memory>
 #include <utility>
@@ -278,3 +279,4 @@ namespace dusk
         Allocator allocator_;
     };
 }
+#endif // NERAL_ENGINE_COMMON_UTILS_H

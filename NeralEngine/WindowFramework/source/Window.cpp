@@ -1,8 +1,9 @@
-/***
- * @Author: Dusk
- * @Date: 2021-09-04 14:00:56
- * @FilePath: \NRender\NRender\WindowFramework\source\Window.cpp
- * @Copyright (c) 2021 Dusk. All rights reserved.
+/**
+ * @author: Dusk
+ * @date: 2021-09-04 14:00:56
+ * @last modified by:   Dusk
+ * @last modified time: 2022-03-04 19:34:37
+ * @copyright Copyright (c) 2022 Dusk.
  */
 #include "../include/Window.h"
 

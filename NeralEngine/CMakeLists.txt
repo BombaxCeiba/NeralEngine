@@ -142,8 +142,8 @@ if (GTEST_FOUND)
     include_directories(./PublicTestComponent)
 endif()
 #project build command start
-set(NRENDER_DIR "${PROJECT_SOURCE_DIR}/NRender")
-include_directories(${NRENDER_DIR})
+set(NERAL_ENGINE_DIR "${PROJECT_SOURCE_DIR}/${MAIN_PROJECT_NAME}")
+include_directories(${NERAL_ENGINE_DIR})
 set_property(GLOBAL PROPERTY GLOBAL_DEPENDENT_LIBS "")
 #create main project
 aux_source_directory(. SOURCE_FILES)

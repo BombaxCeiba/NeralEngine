@@ -1,8 +1,9 @@
-/***
- * @Author: Dusk
- * @Date: 2022-01-10 15:52:44
- * @FilePath: \NRender\Test\StaticStringTest.cpp
- * @Copyright (c) 2021 Dusk. All rights reserved.
+/**
+ * @author: Dusk
+ * @date: 2022-01-10 15:52:44
+ * @last modified by:   Dusk
+ * @last modified time: 2022-03-04 19:09:18
+ * @copyright Copyright (c) 2022 Dusk.
  */
 #include <string>
 #include <iostream>

@@ -1,7 +1,13 @@
-#pragma once
-//***************************************************************************************
-//Vectors.hpp by Dusk_NM02 (c) 2021 All Rights Reserved.
-//***************************************************************************************
+/**
+ * @author: Dusk
+ * @date: 2022-03-04 19:13:27
+ * @last modified by:   Dusk
+ * @last modified time: 2022-03-04 19:13:27
+ * @copyright Copyright (c) 2022 Dusk.
+*/
+#ifndef NERAL_ENGINE_COMMON_VECTORS_HPP
+#define NERAL_ENGINE_COMMON_VECTORS_HPP
+
 #include<cstddef>
 #include<cmath>
 #include<array>
@@ -910,3 +916,5 @@ using Matrix4fAlignasDefault = Matrix4f<>;
 
 MAKE_VECTOR_AND_MATRIX_TYPE(16)
 MAKE_VECTOR_AND_MATRIX_TYPE(32)
+
+#endif // NERAL_ENGINE_COMMON_VECTORS_HPP

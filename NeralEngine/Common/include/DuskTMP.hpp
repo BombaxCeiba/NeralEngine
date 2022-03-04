@@ -1,10 +1,13 @@
-/***
- * @Author: Dusk
- * @Date: 2022-01-31 12:19:00
- * @FilePath: \NRender\NRender\Common\include\DuskTMP.hpp
- * @Copyright (c) 2021 Dusk. All rights reserved.
+/**
+ * @author: Dusk
+ * @date: 2022-01-31 12:19:00
+ * @last modified by:   Dusk
+ * @last modified time: 2022-03-04 19:20:08
+ * @copyright Copyright (c) 2022 Dusk.
  */
-#pragma once
+#ifndef NERAL_ENGINE_COMMON_DUSK_TMP_H
+#define NERAL_ENGINE_COMMON_DUSK_TMP_H
+
 #include <type_traits>
 
 namespace dusk
@@ -46,3 +49,4 @@ namespace dusk
     using void_t = typename make_void<Ts...>::type;
 
 } // namespace dusk
+#endif // NERAL_ENGINE_COMMON_DUSK_TMP_H

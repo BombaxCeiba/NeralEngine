@@ -1,8 +1,9 @@
-/***
- * @Author: Dusk
- * @Date: 2022-01-04 20:21:41
- * @FilePath: \NRender\NRender\Common\source\Win32APIHelper.cpp
- * @Copyright (c) 2021 Dusk. All rights reserved.
+/**
+ * @author: Dusk
+ * @date: 2022-01-04 20:21:41
+ * @last modified by:   Dusk
+ * @last modified time: 2022-03-04 19:12:00
+ * @copyright Copyright (c) 2022 Dusk.
  */
 #include "../include/Win32APIHelper.h"
 

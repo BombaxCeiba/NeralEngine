@@ -1,8 +1,9 @@
-/***
- * @Author: Dusk
- * @Date: 2022-01-24 11:42:25
- * @FilePath: \NRender\Test\LoggerTest.cpp
- * @Copyright (c) 2021 Dusk. All rights reserved.
+/**
+ * @author: Dusk
+ * @date: 2022-01-24 11:42:25
+ * @last modified by:   Dusk
+ * @last modified time: 2022-03-04 19:09:46
+ * @copyright Copyright (c) 2022 Dusk.
  */
 #include "TestMain.h"
 #include "../include/Logger.h"

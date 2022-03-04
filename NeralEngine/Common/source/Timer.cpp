@@ -1,8 +1,9 @@
-/***
- * @Author: Dusk
- * @Date: 2022-01-23 11:03:30
- * @FilePath: \NRender\NRender\Common\source\Timer.cpp
- * @Copyright (c) 2021 Dusk. All rights reserved.
+/**
+ * @author: Dusk
+ * @date: 2022-01-23 11:03:30
+ * @last modified by:   Dusk
+ * @last modified time: 2022-03-04 19:12:19
+ * @copyright Copyright (c) 2022 Dusk.
  */
 #include "../include/Timer.h"
 

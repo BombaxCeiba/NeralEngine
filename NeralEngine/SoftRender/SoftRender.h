@@ -1,7 +1,13 @@
-#pragma once
-//***************************************************************************************
-//SoftRender.cpp by Dusk_NM02 (c) 2021 All Rights Reserved.
-//***************************************************************************************
+/**
+ * @author: Dusk
+ * @date: 2022-03-04 19:24:21
+ * @last modified by:   Dusk
+ * @last modified time: 2022-03-04 19:24:21
+ * @copyright Copyright (c) 2022 Dusk.
+ */
+#ifndef NERAL_ENGINE_SOFTRENDER_SOFTRENDER_H
+#define NERAL_ENGINE_SOFTRENDER_SOFTRENDER_H
+
 #include <memory>
 #include <cmath>
 #include <algorithm>
@@ -31,7 +37,7 @@ public:
 
 private:
     using ObjContentType = ObjContent<16>;
-    //TODO:应当含有贴图的指针
+    // TODO:应当含有贴图的指针
     using SoftShaderType = std::function<Vector3fAlignasDefault(const ObjContentType::Vertex&, const MtlContent&, const Vector4fAlignas16&, const Vector3fAlignas16&)>;
     static Vector3fAlignasDefault DefaultShader(const ObjContentType::Vertex& vertex, const MtlContent& mtl, const Vector4fAlignas16& camera_position, const Vector3fAlignas16& view_position);
     static Vector3fAlignasDefault DepthVisualizer(const ObjContentType::Vertex& vertex, const MtlContent& mtl, const Vector4fAlignas16& camera_position, const Vector3fAlignas16& view_position);
@@ -58,7 +64,7 @@ private:
     static bool IsPointInTriangle(const Vector4fAlignas16& barycentric_args);
     static float InterpolateZ(const Vector4fAlignas16& barycentric_args, const std::array<Vector4fAlignas16, 3>& triangle_positions);
     static ObjContentType::Vertex GetVertex(const Vector4fAlignas16& barycentric_args, const float x, const float y, const float z, const ObjContentType::TriangleVector::value_type& triangle);
-    //stored by BGR
+    // stored by BGR
     struct ColorRGB24
     {
         ColorRGB24() = default;
@@ -149,3 +155,4 @@ public:
         }
     } camera_;
 };
+#endif // NERAL_ENGINE_SOFTRENDER_SOFTRENDER_H

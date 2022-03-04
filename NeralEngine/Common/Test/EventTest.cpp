@@ -1,8 +1,9 @@
-/***
- * @Author: Dusk
- * @Date: 2022-02-02 14:31:57
- * @FilePath: \NRender\Test\EventTest.cpp
- * @Copyright (c) 2021 Dusk. All rights reserved.
+/**
+ * @author: Dusk
+ * @date: 2022-02-02 14:31:57
+ * @last modified by:   Dusk
+ * @last modified time: 2022-03-04 19:10:01
+ * @copyright Copyright (c) 2022 Dusk.
  */
 #include <functional>
 #include <array>

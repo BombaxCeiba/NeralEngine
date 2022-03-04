@@ -1,8 +1,9 @@
-/***
- * @Author: Dusk
- * @Date: 2022-02-22 12:15:38
- * @FilePath: \NRender\Test\TestMain.cpp
- * @Copyright (c) 2021 Dusk. All rights reserved.
+/**
+ * @author: Dusk
+ * @date: 2022-02-22 12:15:38
+ * @last modified by:   Dusk
+ * @last modified time: 2022-03-04 19:21:50
+ * @copyright Copyright (c) 2022 Dusk.
  */
 #include "TestMain.h"
 

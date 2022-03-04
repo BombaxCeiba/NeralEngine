@@ -1,10 +1,13 @@
-/***
- * @Author: Dusk
- * @Date: 2022-01-10 16:19:32
- * @FilePath: \NRender\NRender\Common\include\StaticString.hpp
- * @Copyright (c) 2021 Dusk. All rights reserved.
+/**
+ * @author: Dusk
+ * @date: 2022-01-10 16:19:32
+ * @last modified by:   Dusk
+ * @last modified time: 2022-03-04 19:14:58
+ * @copyright Copyright (c) 2022 Dusk.
  */
-#pragma once
+#ifndef NERAL_ENGINE_COMMON_STATICSTRING_H
+#define NERAL_ENGINE_COMMON_STATICSTRING_H
+
 #include <iostream>
 #include <utility>
 
@@ -80,3 +83,4 @@ namespace dusk
 #define DUSK_MAKE_STATIC_STRING(str) \
     DUSK_MAKE_STATIC_STRING_TYPE(str) {}
 } // namespace dusk
+#endif // NERAL_ENGINE_COMMON_STATICSTRING_H

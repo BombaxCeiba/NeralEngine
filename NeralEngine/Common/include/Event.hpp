@@ -1,7 +1,13 @@
-//***************************************************************************************
-//Event.hpp by Dusk_NM02 (c) 2021 All Rights Reserved.
-//***************************************************************************************
-#pragma once
+/**
+ * @author: Dusk
+ * @date: 2022-03-04 19:19:37
+ * @last modified by:   Dusk
+ * @last modified time: 2022-03-04 19:19:37
+ * @copyright Copyright (c) 2022 Dusk.
+*/
+#ifndef NERAL_ENGINE_COMMON_EVENT_HPP
+#define NERAL_ENGINE_COMMON_EVENT_HPP
+
 #include <stdint.h>
 #include <type_traits>
 #include <functional>
@@ -345,3 +351,5 @@ namespace ceiba
     using DefaultFunctionPointerEvent = Event<EventState (*)(Args...), std::mutex, std::uint16_t, std::vector<EventFunctionStorageType<EventState (*)(Args...), std::uint16_t>>>;
 }
 namespace WindowFramework = ceiba;
+
+#endif // NERAL_ENGINE_COMMON_EVENT_HPP

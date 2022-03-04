@@ -1,6 +1,7 @@
-/***
- * @Author: Dusk
- * @Date: 2022-01-01 01:03:27
- * @FilePath: \NRender\NRender\Common\include\LockFreeQueue.hpp
- * @Copyright (c) 2021 Dusk. All rights reserved.
+/**
+ * @author: Dusk
+ * @date: 2022-01-01 01:03:27
+ * @last modified by:   Dusk
+ * @last modified time: 2022-03-04 19:19:12
+ * @copyright Copyright (c) 2022 Dusk.
  */

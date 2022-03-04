@@ -1,10 +1,13 @@
-/***
- * @Author: Dusk
- * @Date: 2021-12-31 00:21:18
- * @FilePath: \NRender\NRender\Common\include\PhoenixLogger.h
- * @Copyright (c) 2021 Dusk. All rights reserved.
+/**
+ * @author: Dusk
+ * @date: 2021-12-31 00:21:18
+ * @last modified by:   Dusk
+ * @last modified time: 2022-03-04 19:16:30
+ * @copyright Copyright (c) 2022 Dusk.
  */
-#pragma once
+#ifndef NERAL_ENGINE_COMMON_LOGGER_H
+#define NERAL_ENGINE_COMMON_LOGGER_H
+
 #include <iostream>
 #include <type_traits>
 #include "Utils.h"
@@ -95,3 +98,4 @@ namespace dusk
             std::forward<OutputTypes>(contents)...);
     }
 }
+#endif // NERAL_ENGINE_COMMON_LOGGER_H

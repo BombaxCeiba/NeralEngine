@@ -1,7 +1,13 @@
-#pragma once
-//***************************************************************************************
-// Camera.h by Dusk_NM02 (c) 2021 All Rights Reserved.
-//***************************************************************************************
+/**
+ * @author: Dusk
+ * @date: 2022-03-04 19:20:25
+ * @last modified by:   Dusk
+ * @last modified time: 2022-03-04 19:20:25
+ * @copyright Copyright (c) 2022 Dusk.
+*/
+#ifndef NERAL_ENGINE_COMMON_CAMERA_H
+#define NERAL_ENGINE_COMMON_CAMERA_H
+
 #include <array>
 #include "Vectors.hpp"
 class Camera
@@ -13,3 +19,4 @@ public:
 private:
     Matrix4fAlignas16 camera_;
 };
+#endif // NERAL_ENGINE_COMMON_CAMERA_H

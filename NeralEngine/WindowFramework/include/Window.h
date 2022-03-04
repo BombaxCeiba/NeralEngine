@@ -1,10 +1,13 @@
-/***
- * @Author: Dusk
- * @Date: 2021-09-04 14:00:56
- * @FilePath: \NRender\NRender\WindowFramework\include\Window.h
- * @Copyright (c) 2021 Dusk. All rights reserved.
+/**
+ * @author: Dusk
+ * @date: 2021-09-04 14:00:56
+ * @last modified by:   Dusk
+ * @last modified time: 2022-03-04 19:32:49
+ * @copyright Copyright (c) 2022 Dusk.
  */
-#pragma once
+#ifndef CEIBA_WINDOW_H
+#define CEIBA_WINDOW_H
+
 #include <string>
 #include <functional>
 #include <memory>
@@ -84,3 +87,4 @@ private:
     uint32_t width_;
     uint32_t height_;
 };
+#endif // CEIBA_WINDOW_H
