@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.15)
 
 set(MAIN_PROJECT_NAME "NeralEngine")
+set(MAIN_PROJECT_VERSION 0.3)
 
 project(${MAIN_PROJECT_NAME})
 set(CMAKE_CXX_STANDARD 20)

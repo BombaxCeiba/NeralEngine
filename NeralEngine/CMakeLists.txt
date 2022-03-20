@@ -38,6 +38,11 @@ function(append_lib_to_global_property PROPERTY_NAME CONTENT)
     set_property(GLOBAL PROPERTY "${PROPERTY_NAME}" "${THE_PROPERTY}")
 endfunction()
 
+function(config_test_source RESULT)
+    get_property(TEST_SOURCE GLOBAL PROPERTY GLOBAL_TEST_MAIN_SOURCE_FILE)
+    set(${RESULT} ${TEST_SOURCE} PARENT_SCOPE)
+endfunction()
+
 function(create_gtest TEST_NAME TEST_FILES DEPENDENT_SOURCE_FILES DEPENDENT_LIBS)
     if("${TEST_FILES}" STREQUAL "")
         return()
@@ -148,12 +153,16 @@ set_property(GLOBAL PROPERTY GLOBAL_DEPENDENT_LIBS "")
 #create main project
 aux_source_directory(. SOURCE_FILES)
 add_executable(${MAIN_PROJECT_NAME} ${SOURCE_FILES})
+set_target_properties(${MAIN_PROJECT_NAME} PROPERTIES VERSION ${MAIN_PROJECT_VERSION})
 #add main project components
+add_subdirectory(Version)
 add_subdirectory(Common)
 add_subdirectory(WindowFramework)
 add_subdirectory(D3D12Render)
 add_subdirectory(RayTrackingRender)
 add_subdirectory(SoftRender)
+#config dependencies
+add_dependencies(${MAIN_PROJECT_NAME} NeralVersion)
 #add GLOBAL_DEPENDENT_LIBS to main project config
 get_property(RELATIVE_LIBS GLOBAL PROPERTY GLOBAL_DEPENDENT_LIBS)
 List(REMOVE_DUPLICATES RELATIVE_LIBS)
