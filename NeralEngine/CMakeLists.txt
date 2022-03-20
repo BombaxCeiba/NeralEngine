@@ -113,6 +113,33 @@ function(create_gtest TEST_NAME TEST_FILES DEPENDENT_SOURCE_FILES DEPENDENT_LIBS
 endfunction()
 #example: create_gtest(AllTest "${TEST_FILES}" "${SOURCE_FILES}" "${LIBS})
 
+function(create_gtest_for_lib TEST_NAME TEST_FILES LIB_NAME)
+    message(STATUS "Create gtest:${TEST_NAME}.")
+    #create test executable
+    add_executable(${TEST_NAME} ${TEST_FILES})
+    add_dependencies(${TEST_NAME} ${LIB_NAME})
+    #use pthread or mt
+    if(MSVC)
+        set_property(TARGET ${TEST_NAME} PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+        target_link_libraries(${TEST_NAME} PRIVATE GTest::gtest ${LIB_NAME})
+    else()
+        target_link_libraries(${TEST_NAME} PRIVATE GTest::gtest pthread ${LIB_NAME})
+    endif()
+        #force cmake output test executable to ${CMAKE_BINARY_DIR}/Test
+    set_target_properties(${TEST_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/Test)
+    set_target_properties(${TEST_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/Test)
+    set_target_properties(${TEST_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/Test)
+    set_target_properties(${TEST_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_BINARY_DIR}/Test)
+    set_target_properties(${TEST_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL ${CMAKE_BINARY_DIR}/Test)
+    gtest_discover_tests(${TEST_NAME}
+                         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/Test
+                         TEST_LIST ${GTEST_LIST})
+    #add test to target BuildAndTestAll
+    add_dependencies(BuildAndTestAll ${TEST_NAME})
+    #finish config
+    message(STATUS "Succeed!")
+endfunction()
+
 function(create_gtest_from_files_and_use_current_directory_as_dependency TEST_SOURCE DEPENDENT_LIBS)
     get_current_directory_name(TEST_NAME)
     aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR} TEST_DEPENDENCIES_SOURCE)
