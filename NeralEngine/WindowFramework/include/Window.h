@@ -12,11 +12,15 @@
 #include <functional>
 #include <memory>
 #include <Windows.h>
-#include "Common/include/Event.hpp"
+#include "Event.hpp"
 #include "Common/include/RenderBase.h"
 
 namespace Ceiba
 {
+
+#ifdef UNICODE
+#else
+#endif
 
     class Window;
 

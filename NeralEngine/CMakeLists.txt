@@ -151,28 +151,45 @@ function(create_gtest_from_files_and_use_specific_directory_as_dependency TEST_S
     aux_source_directory(${SPECIFIC_DIRECTORY} TEST_DEPENDENCIES_SOURCE)
     create_gtest("${TEST_NAME}Test" "${TEST_SOURCE}" "${TEST_DEPENDENCIES_SOURCE}" "${DEPENDENT_LIBS}")
 endfunction()
-################ Function declaration end ################
 
+# ############### Function declaration end ################
 
-#config global test project
-find_package(GTest REQUIRED)
-if (GTEST_FOUND)
-    enable_testing()
-    include(GoogleTest)
-    #create all tests target
-    add_custom_target(BuildAndTestAll ${CMAKE_CTEST_COMMAND} -V --rerun-failed --output-on-failure)
-    # !!maybe_unused!! force cmake output executable to ${PROJECT_SOURCE_DIR}/Test
-    set_target_properties(BuildAndTestAll PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Test)
-    set_target_properties(BuildAndTestAll PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG ${PROJECT_SOURCE_DIR}/Test)
-    set_target_properties(BuildAndTestAll PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_SOURCE_DIR}/Test)
-    set_target_properties(BuildAndTestAll PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${PROJECT_SOURCE_DIR}/Test)
-    set_target_properties(BuildAndTestAll PROPERTIES RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL ${PROJECT_SOURCE_DIR}/Test)
-    #declare GLOBAL_TEST_MAIN_SOURCE_FILE through it's not necessary
-    set_property(GLOBAL PROPERTY GLOBAL_TEST_MAIN_SOURCE_FILE "")
-    #config public test components
-    add_subdirectory(PublicTestComponent)
-    include_directories(./PublicTestComponent)
-endif()
+# config global test project
+include(FetchContent)
+set(GTEST_PROJECT_NAME "googletest_1_12_1")
+set(GTEST_SOURCE_PATH "${THRID_PARTY_DIR}/${GTEST_PROJECT_NAME}")
+FetchContent_Declare(${GTEST_PROJECT_NAME}
+    GIT_REPOSITORY git@github.com:google/googletest.git
+    GIT_TAG release-1.12.1
+)
+set(BUILD_GMOCK OFF CACHE BOOL "" FORCE)
+set(BUILD_GTEST ON CACHE BOOL "" FORCE)
+set(gtest_build_tests OFF CACHE BOOL "" FORCE)
+set(gtest_build_samples OFF CACHE BOOL "" FORCE)
+message(STATUS "Configuring gtest...")
+FetchContent_MakeAvailable(${GTEST_PROJECT_NAME})
+message(STATUS "Finish!")
+
+enable_testing()
+include(GoogleTest)
+
+# create all tests target
+add_custom_target(BuildAndTestAll ${CMAKE_CTEST_COMMAND} -V --rerun-failed --output-on-failure)
+
+# !!maybe_unused!! force cmake output executable to ${PROJECT_SOURCE_DIR}/Test
+set_target_properties(BuildAndTestAll PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Test)
+set_target_properties(BuildAndTestAll PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG ${PROJECT_SOURCE_DIR}/Test)
+set_target_properties(BuildAndTestAll PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_SOURCE_DIR}/Test)
+set_target_properties(BuildAndTestAll PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${PROJECT_SOURCE_DIR}/Test)
+set_target_properties(BuildAndTestAll PROPERTIES RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL ${PROJECT_SOURCE_DIR}/Test)
+
+# declare GLOBAL_TEST_MAIN_SOURCE_FILE through it's not necessary
+set_property(GLOBAL PROPERTY GLOBAL_TEST_MAIN_SOURCE_FILE "")
+
+# config public test components
+add_subdirectory(PublicTestComponent)
+include_directories(./PublicTestComponent)
+
 #project build command start
 set(NERAL_ENGINE_DIR "${PROJECT_SOURCE_DIR}/${MAIN_PROJECT_NAME}")
 include_directories(${NERAL_ENGINE_DIR})

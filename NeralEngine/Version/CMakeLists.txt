@@ -1,3 +1,5 @@
+#set relative project name
+set(RELATIVE_PROJECT_NAME "Neral")
 #config BuildVersion.txt
 set(BUILD_VERSION_FILE_NAME "BuildVersion.txt")
 if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${BUILD_VERSION_FILE_NAME}")
@@ -6,7 +8,7 @@ if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${BUILD_VERSION_FILE_NAME}")
     file(WRITE ./VersionHelper.cpp
 "#include \"VersionHelper.h\"
 
-namespace Neral
+namespace ${RELATIVE_PROJECT_NAME}
 {
     const std::uint32_t build_version{0};
     const char* const build_time = __TIME__;
@@ -27,9 +29,9 @@ file(WRITE \$\{CMAKE_CURRENT_SOURCE_DIR\}/${BUILD_VERSION_FILE_NAME} \"\$\{BUILD
 file(WRITE \$\{CMAKE_CURRENT_SOURCE_DIR\}/VersionHelper.cpp
 \"#include \\\"VersionHelper.h\\\"
 
-namespace Neral
+namespace \$\{RELATIVE_PROJECT_NAME\}
 {
-    const std::uint32_t build_version{$\{BUILD_VERSION\}};
+    const std::uint32_t build_version{\$\{BUILD_VERSION\}};
     const char* const build_time = __TIME__;
     const char* const build_date = __DATE__;
 }
@@ -48,7 +50,7 @@ add_custom_target("BuildVersionIncreaser"
 add_dependencies(${MAIN_PROJECT_NAME} "BuildVersionIncreaser")
 #config lib
 aux_source_directory(. VERSION_SOURCE)
-set(LIB_NAME "NeralVersion")
+set(LIB_NAME "${RELATIVE_PROJECT_NAME}Version")
 add_library(${LIB_NAME} STATIC EXCLUDE_FROM_ALL ${VERSION_SOURCE})
 target_compile_definitions(${LIB_NAME} PRIVATE NERAL_BUILD_TYPE="${CMAKE_BUILD_TYPE}")
 target_compile_definitions(${LIB_NAME} PRIVATE NERAL_MANUAL_VERSION="${MAIN_PROJECT_VERSION}")
